@@ -7,9 +7,17 @@ import com.github.kwhat.jnativehook.mouse.*;
 import org.json.JSONObject;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import javax.swing.text.AbstractDocument;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DocumentFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.awt.geom.RoundRectangle2D;
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,9 +42,20 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
     private static boolean isFullScreen = false;
     private static int width = 300, height = 120; // 初始大小
     private static Timer resizeTimer;
-    private static int waitTimeAll = 10;
-    private static int fullWaitTimeAll = 600;
+    private static int waitTimeAll;
+    private static int fullWaitTimeAll;
     private static boolean timeToShow = false;
+    private static int R;
+    private static int G;
+    private static int B;
+    private static Timer mainTimer;
+    private static PopupMenu popupMenu;
+    private static MenuItem sleepMenu;
+    private static MenuItem sleep10;
+    private static MenuItem sleep20;
+    private static MenuItem sleep40;
+    private static MenuItem sleep60;
+    private static SystemTray tray;
 
     public FloatingClockTray() {
     }
@@ -66,8 +85,11 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
         int fullWaitTime = json.getInt("full_screen_wait_time");
         waitTimeAll=waitTime;
         fullWaitTimeAll=fullWaitTime;
+        R=Color.decode(color).getRed();
+        G=Color.decode(color).getGreen();
+        B=Color.decode(color).getBlue();
 
-        SystemTray tray = SystemTray.getSystemTray();
+        tray = SystemTray.getSystemTray();
         Image image = Toolkit.getDefaultToolkit().getImage(FloatingClockTray.class.getResource("/xxyxxdmc.png"));
         TrayIcon trayIcon = new TrayIcon(image, "Clock");
         trayIcon.setImageAutoSize(true);
@@ -89,7 +111,7 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
         timeLabel.setFont(MCFont.deriveFont(Font.PLAIN, 48));
         frame.add(timeLabel);
         frame.getContentPane().setBackground(Color.BLACK);
-        timeLabel.setForeground(Color.decode(color));
+        timeLabel.setForeground(new Color(R, G, B));
 
         // 关闭窗口时隐藏
         frame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
@@ -103,15 +125,153 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
         frame.setEnabled(false);
 
         // 托盘菜单
-        PopupMenu popupMenu = new PopupMenu();
+        popupMenu = new PopupMenu();
+        MenuItem settingItem = new MenuItem("Setting");
+        settingItem.addActionListener(e -> {
+            JFrame settingFrame = new JFrame("Setting");
+            settingFrame.setSize(290, 180);
+            Dimension frameSize = settingFrame.getSize();
+            int x = (screenSize.width - frameSize.width) / 2;
+            int y = (screenSize.height - frameSize.height) / 2;
+            settingFrame.setLocation(x,y);
+            settingFrame.setEnabled(true);
+            settingFrame.setVisible(true);
+            settingFrame.setResizable(false);
+            settingFrame.setLayout(new FlowLayout()); // 使用流式布局
 
+            JTextField waitTextField = new JTextField(18);
+            waitTextField.setText(String.valueOf(waitTimeAll));
+            ((AbstractDocument) waitTextField.getDocument()).setDocumentFilter(new NumericFilter());
+            JTextField fullWaitTextField = new JTextField(16);// 创建文本框，设置宽度为 20 个字符
+            fullWaitTextField.setText(String.valueOf(fullWaitTimeAll));
+            ((AbstractDocument) fullWaitTextField.getDocument()).setDocumentFilter(new NumericFilter());
+            JLabel waitLabel = new JLabel("Wait Time:"); // 添加标签
+            JLabel fullWaitLabel = new JLabel("Full Wait Time:"); // 添加标签
+            JLabel colorLabel = new JLabel("Color:"); // 添加标签
+            JPanel colorPanel = new JPanel();
+            colorPanel.setBackground(new Color(R, G, B));
+            JSlider RSlider = new JSlider(0, 255, R);
+            JSlider GSlider = new JSlider(0, 255, G);
+            JSlider BSlider = new JSlider(0, 255, B);
+            RSlider.setMajorTickSpacing(50);
+            RSlider.setPaintTicks(true);
+            RSlider.addChangeListener(new ChangeListener() {
+                @Override
+                public void stateChanged(ChangeEvent e) {
+                    R = RSlider.getValue();
+                    colorPanel.setBackground(new Color(R, G, B));
+                }
+            });
+            GSlider.setMajorTickSpacing(50);
+            GSlider.setPaintTicks(true);
+            GSlider.addChangeListener(new ChangeListener() {
+                @Override
+                public void stateChanged(ChangeEvent e) {
+                    G = GSlider.getValue();
+                    colorPanel.setBackground(new Color(R, G, B));
+                }
+            });
+            BSlider.setMajorTickSpacing(50);
+            BSlider.setPaintTicks(true);
+            BSlider.addChangeListener(new ChangeListener() {
+                @Override
+                public void stateChanged(ChangeEvent e) {
+                    B = BSlider.getValue();
+                    colorPanel.setBackground(new Color(R, G, B));
+                }
+            });
+            settingFrame.add(waitLabel);
+            settingFrame.add(waitTextField);
+            settingFrame.add(fullWaitLabel);
+            settingFrame.add(fullWaitTextField);
+            settingFrame.add(colorLabel);
+            settingFrame.add(RSlider, BorderLayout.SOUTH);
+            settingFrame.add(colorPanel);
+            settingFrame.add(GSlider, BorderLayout.SOUTH);
+            settingFrame.add(BSlider, BorderLayout.SOUTH);
+
+            settingFrame.addWindowListener(new WindowAdapter() {
+                @Override
+                public void windowClosing(WindowEvent e) {
+                    Color color = colorPanel.getBackground();
+                    String hex = String.format("#%02X%02X%02X", color.getRed(), color.getGreen(), color.getBlue());
+                    String waitText = waitTextField.getText();
+                    String fullWaitText = fullWaitTextField.getText();
+                    if (Integer.parseInt(waitText)<5) waitText="5";
+                    if (Integer.parseInt(fullWaitText)<10) fullWaitText="10";
+                    if (Integer.parseInt(waitText)>120) waitText="120";
+                    if (Integer.parseInt(fullWaitText)>2400) fullWaitText="2400";
+                    if (Integer.parseInt(waitText)>Integer.parseInt(fullWaitText)) {
+                        waitText="30";fullWaitText="600";
+                    }
+                    Path jarDir = Paths.get(System.getProperty("user.dir"));
+                    Path jsonPath = jarDir.resolve("data.json");
+                    String defaultJSON = String.format("{\n  \"color\": \"%s\",\n  \"full_screen_wait_time\": %s,\n  \"wait_time\": %s\n}", hex, fullWaitText, waitText);
+                    try {Files.write(jsonPath, defaultJSON.getBytes());} catch (IOException ignored) {}
+                    fullWaitTimeAll= Integer.parseInt(fullWaitText);
+                    waitTimeAll= Integer.parseInt(waitText);
+                    R=color.getRed();
+                    G=color.getGreen();
+                    B=color.getBlue();
+                    timeLabel.setForeground(new Color(R, G, B));
+                }
+            });
+        });
+        popupMenu.add(settingItem);
+
+        sleepMenu = new MenuItem("Sleep");
+        sleep10 = new MenuItem("Sleep 10 minutes");
+        sleep20 = new MenuItem("Sleep 20 minutes");
+        sleep40 = new MenuItem("Sleep 40 minutes");
+        sleep60 = new MenuItem("Sleep 60 minutes");
+        sleep10.addActionListener(e -> {
+            sleepInTime(10);
+            popupMenu.remove(sleep10);
+            popupMenu.remove(sleep20);
+            popupMenu.remove(sleep40);
+            popupMenu.remove(sleep60);
+            tray.getTrayIcons()[0].setPopupMenu(popupMenu);
+        });
+        sleep20.addActionListener(e -> {
+            sleepInTime(20);
+            popupMenu.remove(sleep10);
+            popupMenu.remove(sleep20);
+            popupMenu.remove(sleep40);
+            popupMenu.remove(sleep60);
+            tray.getTrayIcons()[0].setPopupMenu(popupMenu);
+        });
+        sleep40.addActionListener(e -> {
+            sleepInTime(40);
+            popupMenu.remove(sleep10);
+            popupMenu.remove(sleep20);
+            popupMenu.remove(sleep40);
+            popupMenu.remove(sleep60);
+            tray.getTrayIcons()[0].setPopupMenu(popupMenu);
+        });
+        sleep60.addActionListener(e -> {
+            sleepInTime(60);
+            popupMenu.remove(sleep10);
+            popupMenu.remove(sleep20);
+            popupMenu.remove(sleep40);
+            popupMenu.remove(sleep60);
+            tray.getTrayIcons()[0].setPopupMenu(popupMenu);
+        });
+        sleepMenu.addActionListener(e -> {
+            popupMenu.add(sleep10);
+            popupMenu.add(sleep20);
+            popupMenu.add(sleep40);
+            popupMenu.add(sleep60);
+            popupMenu.remove(sleepMenu); // 删除折叠菜单项
+            tray.getTrayIcons()[0].setPopupMenu(popupMenu); // 重新加载菜单
+        });
+        popupMenu.add(sleepMenu);
         MenuItem exitItem = new MenuItem("Exit");
         exitItem.addActionListener(e -> System.exit(0));
         popupMenu.add(exitItem);
 
         trayIcon.setPopupMenu(popupMenu);
 
-        Timer mainTimer = new Timer(1000, e -> {
+        mainTimer = new Timer(1000, e -> {
             if (!isFullScreen) {
                 fullScreenTimer++;
                 if (fullScreenTimer==fullWaitTimeAll) {
@@ -152,21 +312,43 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
     public void nativeMouseMoved(NativeMouseEvent event) {
         try {
             timeToShow=false;
-            resetTimer(); // 鼠标移动
+            resetTimer();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
 
     @Override
-    public void nativeMouseWheelMoved(NativeMouseWheelEvent event) {
+    public void nativeMouseDragged(NativeMouseEvent event) {
         try {
             timeToShow=false;
-            resetTimer(); // 鼠标滚动
+            resetTimer();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
+
+    public static void sleepInTime(int minutes) {
+        scheduler.shutdownNow();
+        mainTimer.stop();
+        timer=0;
+        fullScreenTimer=0;
+        isFullScreen=false;
+        isRunning=true;
+        scheduler = Executors.newScheduledThreadPool(1);
+        scheduler.schedule(() -> {
+            mainTimer.start();
+            isRunning=false;
+            try {resetTimer();} catch (InterruptedException ignored) {}
+            popupMenu.remove(sleep10);
+            popupMenu.remove(sleep20);
+            popupMenu.remove(sleep40);
+            popupMenu.remove(sleep60);
+            popupMenu.add(sleepMenu);
+            tray.getTrayIcons()[0].setPopupMenu(popupMenu);
+        }, minutes, TimeUnit.MINUTES);
+    }
+
     public static double easeInBack(double x) {
         double c1 = 1.70158;
         double c3 = c1 + 1;
@@ -233,12 +415,12 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
     private static void enterFullScreen(){
         if (isRunning) return;
         isRunning=true;
-        resizeTimer = new Timer(20, new ActionListener()  {
+        resizeTimer = new Timer(10, new ActionListener()  {
             final Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
             @Override
             public void actionPerformed(ActionEvent e) {
                 if ((width < screenSize.width || height < screenSize.height) && timer < 1) {
-                    timer += 0.02;
+                    timer += 0.01;
                     width = 300 + (int) ((screenSize.width - 300) * easeOutExpo(timer));
                     height = 120 + (int) ((screenSize.height - 120) * easeOutExpo(timer));
                     y = 50 + (int) (((double) ((screenSize.height - frame.getHeight()) / 2) - 50) * easeOutExpo(timer));
@@ -271,12 +453,12 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
     private static void exitFullScreen(){
         if (isRunning) return;
         isRunning=true;
-        resizeTimer = new Timer(20, new ActionListener()  {
+        resizeTimer = new Timer(10, new ActionListener()  {
             final Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
             @Override
             public void actionPerformed(ActionEvent e) {
                 if ((width < screenSize.width || height < screenSize.height) && timer < 1) {
-                    timer += 0.02;
+                    timer += 0.01;
                     width = screenSize.width + (int) ((300 - screenSize.width) * easeOutExpo(timer));
                     height = screenSize.height + (int) ((120 - screenSize.height) * easeOutExpo(timer));
                     y = (screenSize.height - frame.getHeight()) / 2 + (int) ((50 - (double) (screenSize.height - frame.getHeight()) / 2) * easeOutExpo(timer));
@@ -307,6 +489,21 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
         try {
             Files.write(path, defaultJSON.getBytes());
         } catch (IOException ignored) {
+        }
+    }
+}
+class NumericFilter extends DocumentFilter {
+    @Override
+    public void insertString(FilterBypass fb, int offset, String string, AttributeSet attr) throws BadLocationException {
+        if (string.matches("\\d+")) { // 仅允许数字
+            super.insertString(fb, offset, string, attr);
+        }
+    }
+
+    @Override
+    public void replace(FilterBypass fb, int offset, int length, String string, AttributeSet attrs) throws BadLocationException {
+        if (string.matches("\\d+")) { // 仅允许数字
+            super.replace(fb, offset, length, string, attrs);
         }
     }
 }
