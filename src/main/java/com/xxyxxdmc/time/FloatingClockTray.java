@@ -30,6 +30,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import static javax.swing.JOptionPane.INFORMATION_MESSAGE;
+
 public class FloatingClockTray implements NativeKeyListener, NativeMouseListener, NativeMouseInputListener, NativeMouseWheelListener {
     private static final JFrame frame = new JFrame("Clock");
     private static JLabel timeLabel;
@@ -55,6 +57,11 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
     private static MenuItem sleep20;
     private static MenuItem sleep40;
     private static MenuItem sleep60;
+    private static MenuItem lowSleepMenu;
+    private static MenuItem lowSleep10;
+    private static MenuItem lowSleep20;
+    private static MenuItem lowSleep40;
+    private static MenuItem lowSleep60;
     private static SystemTray tray;
 
     public FloatingClockTray() {
@@ -265,6 +272,50 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
             tray.getTrayIcons()[0].setPopupMenu(popupMenu); // 重新加载菜单
         });
         popupMenu.add(sleepMenu);
+        lowSleepMenu = new MenuItem("Low Sleep");
+        lowSleep10 = new MenuItem("Low Sleep 10 minutes");
+        lowSleep20 = new MenuItem("Low Sleep 20 minutes");
+        lowSleep40 = new MenuItem("Low Sleep 40 minutes");
+        lowSleep60 = new MenuItem("Low Sleep 60 minutes");
+        lowSleep10.addActionListener(e -> {
+            lowSleepInTime(10);
+            popupMenu.remove(lowSleep10);
+            popupMenu.remove(lowSleep20);
+            popupMenu.remove(lowSleep40);
+            popupMenu.remove(lowSleep60);
+            tray.getTrayIcons()[0].setPopupMenu(popupMenu);
+        });lowSleep20.addActionListener(e -> {
+            lowSleepInTime(20);
+            popupMenu.remove(lowSleep10);
+            popupMenu.remove(lowSleep20);
+            popupMenu.remove(lowSleep40);
+            popupMenu.remove(lowSleep60);
+            tray.getTrayIcons()[0].setPopupMenu(popupMenu);
+        });lowSleep40.addActionListener(e -> {
+            lowSleepInTime(40);
+            popupMenu.remove(lowSleep10);
+            popupMenu.remove(lowSleep20);
+            popupMenu.remove(lowSleep40);
+            popupMenu.remove(lowSleep60);
+            tray.getTrayIcons()[0].setPopupMenu(popupMenu);
+        });lowSleep60.addActionListener(e -> {
+            lowSleepInTime(60);
+            popupMenu.remove(lowSleep10);
+            popupMenu.remove(lowSleep20);
+            popupMenu.remove(lowSleep40);
+            popupMenu.remove(lowSleep60);
+            tray.getTrayIcons()[0].setPopupMenu(popupMenu);
+        });lowSleepMenu.addActionListener(e -> {
+            popupMenu.add(lowSleep10);
+            popupMenu.add(lowSleep20);
+            popupMenu.add(lowSleep40);
+            popupMenu.add(lowSleep60);
+            popupMenu.remove(sleepMenu);
+            popupMenu.remove(lowSleepMenu);
+            tray.getTrayIcons()[0].setPopupMenu(popupMenu);
+        });
+        popupMenu.add(lowSleepMenu);
+
         MenuItem exitItem = new MenuItem("Exit");
         exitItem.addActionListener(e -> System.exit(0));
         popupMenu.add(exitItem);
@@ -281,6 +332,19 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
             }
         });
         mainTimer.start();
+
+        int confirm = JOptionPane.showConfirmDialog(null, "Do you want to enable low sleep for 40 minutes now?");
+
+        if (confirm == JOptionPane.OK_OPTION) {
+            lowSleepInTime(40);
+            popupMenu.remove(sleepMenu);
+            popupMenu.remove(lowSleepMenu);
+            popupMenu.remove(lowSleep10);
+            popupMenu.remove(lowSleep20);
+            popupMenu.remove(lowSleep40);
+            popupMenu.remove(lowSleep60);
+            tray.getTrayIcons()[0].setPopupMenu(popupMenu);
+        }
     }
 
     private static void updateTime() {
@@ -344,6 +408,23 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
             popupMenu.remove(sleep20);
             popupMenu.remove(sleep40);
             popupMenu.remove(sleep60);
+            popupMenu.add(sleepMenu);
+            tray.getTrayIcons()[0].setPopupMenu(popupMenu);
+        }, minutes, TimeUnit.MINUTES);
+    }
+
+    public static void lowSleepInTime(int minutes) {
+        mainTimer.stop();
+        fullScreenTimer=0;
+        isFullScreen=false;
+        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
+        scheduler.schedule(() -> {
+            mainTimer.start();
+            popupMenu.remove(lowSleep10);
+            popupMenu.remove(lowSleep20);
+            popupMenu.remove(lowSleep40);
+            popupMenu.remove(lowSleep60);
+            popupMenu.add(lowSleepMenu);
             popupMenu.add(sleepMenu);
             tray.getTrayIcons()[0].setPopupMenu(popupMenu);
         }, minutes, TimeUnit.MINUTES);
@@ -415,18 +496,18 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
     private static void enterFullScreen(){
         if (isRunning) return;
         isRunning=true;
-        resizeTimer = new Timer(10, new ActionListener()  {
+        resizeTimer = new Timer(20, new ActionListener()  {
             final Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
             @Override
             public void actionPerformed(ActionEvent e) {
                 if ((width < screenSize.width || height < screenSize.height) && timer < 1) {
-                    timer += 0.01;
-                    width = 300 + (int) ((screenSize.width - 300) * easeOutExpo(timer));
-                    height = 120 + (int) ((screenSize.height - 120) * easeOutExpo(timer));
+                    timer += 0.02;
+                    width = (int) Math.ceil(300 + ((screenSize.width - 300) * easeOutExpo(timer)));
+                    height = (int) Math.ceil(120 +((screenSize.height - 120) * easeOutExpo(timer)));
                     y = 50 + (int) (((double) ((screenSize.height - frame.getHeight()) / 2) - 50) * easeOutExpo(timer));
                     frame.setLocation((screenSize.width - frame.getWidth()) / 2, y);
                     frame.setSize(width, height);
-                    frame.setShape(new RoundRectangle2D.Float(0, y, width, height, 0, 0));
+                    frame.setShape(new RoundRectangle2D.Float(0, 0, width, height, 0, 0));
                     InputStream fontStream = FloatingClockTray.class.getResourceAsStream("/minecraft.ttf");
                     assert fontStream != null;
                     Font MCFont;
@@ -435,11 +516,11 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
                     } catch (FontFormatException | IOException ex) {
                         throw new RuntimeException(ex);
                     }
-                    timeLabel.setFont(MCFont.deriveFont(Font.PLAIN, 48 + (int) ((240 - 48) * easeOutExpo(timer))));
+                    timeLabel.setFont(MCFont.deriveFont(Font.PLAIN, (float) (48 + ((260 - 48) * easeOutExpo(timer)))));
                 } else {
-                    frame.setLocation(((screenSize.width - frame.getWidth()) / 2), ((screenSize.height - frame.getHeight()) / 2)-2);
-                    frame.setSize(screenSize.width +6, screenSize.height);
-                    frame.setShape(new RoundRectangle2D.Float(0, y, screenSize.width, screenSize.height, 0, 0));
+                    frame.setLocation(((screenSize.width - frame.getWidth()) / 2), ((screenSize.height - frame.getHeight()) / 2));
+                    frame.setSize(screenSize.width, screenSize.height);
+                    frame.setShape(new RoundRectangle2D.Float(0, 0, screenSize.width, screenSize.height, 0, 0));
                     timer=0;
                     isRunning=false;
                     ((Timer) e.getSource()).stop();
@@ -453,14 +534,14 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
     private static void exitFullScreen(){
         if (isRunning) return;
         isRunning=true;
-        resizeTimer = new Timer(10, new ActionListener()  {
+        resizeTimer = new Timer(20, new ActionListener()  {
             final Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
             @Override
             public void actionPerformed(ActionEvent e) {
                 if ((width < screenSize.width || height < screenSize.height) && timer < 1) {
-                    timer += 0.01;
-                    width = screenSize.width + (int) ((300 - screenSize.width) * easeOutExpo(timer));
-                    height = screenSize.height + (int) ((120 - screenSize.height) * easeOutExpo(timer));
+                    timer += 0.02;
+                    width = (int) Math.ceil(screenSize.width + ((300 - screenSize.width) * easeOutExpo(timer)));
+                    height = (int) Math.ceil(screenSize.height + ((120 - screenSize.height) * easeOutExpo(timer)));
                     y = (screenSize.height - frame.getHeight()) / 2 + (int) ((50 - (double) (screenSize.height - frame.getHeight()) / 2) * easeOutExpo(timer));
                     frame.setLocation((screenSize.width - frame.getWidth()) / 2, y);
                     frame.setSize(width, height);
@@ -473,7 +554,7 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
                     } catch (FontFormatException | IOException ex) {
                         throw new RuntimeException(ex);
                     }
-                    timeLabel.setFont(MCFont.deriveFont(Font.PLAIN, 240 + (int) ((48 - 240) * easeOutExpo(timer))));
+                    timeLabel.setFont(MCFont.deriveFont(Font.PLAIN, (float) (260 + ((48 - 260) * easeOutExpo(timer)))));
                 } else {
                     timer=0;
                     isRunning=false;
