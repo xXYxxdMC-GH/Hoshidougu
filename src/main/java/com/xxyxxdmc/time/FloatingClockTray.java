@@ -1,4 +1,4 @@
-package main.java;
+package main.java.com.xxyxxdmc.time;
 
 import com.github.kwhat.jnativehook.GlobalScreen;
 import com.github.kwhat.jnativehook.keyboard.NativeKeyEvent;
