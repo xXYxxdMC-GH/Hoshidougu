@@ -123,6 +123,7 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
         frame.setVisible(true);
         frame.setFocusableWindowState(false);
         frame.setEnabled(false);
+        JFrame.setDefaultLookAndFeelDecorated(true);
 
         // 托盘菜单
         popupMenu = new PopupMenu();
@@ -451,7 +452,8 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
                     height = (int) Math.ceil(120 +((screenSize.height - 120) * easeOutExpo(timer)));
                     y = 50 + (int) (((double) ((screenSize.height - frame.getHeight()) / 2) - 50) * easeOutExpo(timer));
                     frame.setLocation((screenSize.width - frame.getWidth()) / 2, y);
-                    frame.setSize(width, height);
+                    frame.setPreferredSize(new Dimension(width, height));
+                    frame.pack();
                     frame.setShape(new RoundRectangle2D.Float(0, 0, width, height, 0, 0));
                     InputStream fontStream = FloatingClockTray.class.getResourceAsStream("/minecraft.ttf");
                     assert fontStream != null;
@@ -460,7 +462,8 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
                     timeLabel.setFont(MCFont.deriveFont(Font.PLAIN, (float) (48 + ((260 - 48) * easeOutExpo(timer)))));
                 } else {
                     frame.setLocation(((screenSize.width - frame.getWidth()) / 2), ((screenSize.height - frame.getHeight()) / 2));
-                    frame.setSize(screenSize.width, screenSize.height);
+                    frame.setPreferredSize(screenSize);
+                    frame.pack();
                     frame.setShape(new RoundRectangle2D.Float(0, 0, screenSize.width, screenSize.height, 0, 0));
                     timer=0;
                     isRunning=false;
@@ -485,7 +488,8 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
                     height = (int) Math.ceil(screenSize.height + ((120 - screenSize.height) * easeOutExpo(timer)));
                     y = (screenSize.height - frame.getHeight()) / 2 + (int) ((50 - (double) (screenSize.height - frame.getHeight()) / 2) * easeOutExpo(timer));
                     frame.setLocation((screenSize.width - frame.getWidth()) / 2, y);
-                    frame.setSize(width, height);
+                    frame.setPreferredSize(new Dimension(width, height));
+                    frame.pack();
                     frame.setShape(new RoundRectangle2D.Float(0, 0, width, height, 30, 30));
                     InputStream fontStream = FloatingClockTray.class.getResourceAsStream("/minecraft.ttf");
                     assert fontStream != null;
