@@ -1,0 +1,17 @@
+{
+  "clock": "Clock",
+  "setting": "Setting",
+  "wait_time": "Wait Time:",
+  "full_wait_time": "Full Wait Time:",
+  "color": "Color:",
+  "countdown": "Countdown",
+  "countdown_yes": "Countdown ✔",
+  "full_screen": "Full Screen",
+  "sleep": "Sleep",
+  "sleep_in_time": "Sleep %s minutes",
+  "low_sleep": "Low Sleep",
+  "low_sleep_in_time": "Low Sleep %s minutes",
+  "exit": "Exit",
+  "ask_sentence": "Do you want to enable low sleep for 40 minutes now?",
+  "ask": "Ask"
+}
