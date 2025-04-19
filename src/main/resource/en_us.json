@@ -17,5 +17,6 @@
   "low_sleep_custom_time": "Low Sleep Custom Time",
   "exit": "Exit",
   "ask_sentence": "Do you want to enable low sleep for 40 minutes now?",
-  "ask": "Ask"
+  "ask": "Ask",
+  "restart_info": "These settings will take effect after the restart."
 }

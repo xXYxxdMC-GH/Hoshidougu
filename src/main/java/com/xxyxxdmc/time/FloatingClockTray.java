@@ -14,7 +14,6 @@ import java.awt.event.*;
 import java.awt.geom.RoundRectangle2D;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -217,10 +216,15 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
             },5,TimeUnit.SECONDS);
         });
         popupMenu.add(fullScreenItem);
-        MenuItem languageSwitch = new MenuItem(languageObject.getString("language"));
+        MenuItem languageSwitch = new MenuItem("语言");
         languageSwitch.addActionListener(e -> {
-            if (Objects.equals(language, "en_us")) json.put("language", "zh_cn");
-            else json.put("language", "en_us");
+            String currentLanguage;
+            if (Objects.equals(language, "en_us")) currentLanguage = "zh_cn";
+            else currentLanguage = "en_us";
+            String defaultJSON = String.format("{\n  \"language\": \"%s\",\n  \"color\": \"%s\",\n  \"full_screen_wait_time\": %s,\n  \"wait_time\": %s\n}", currentLanguage, color, fullWaitTimeAll, waitTimeAll);
+            try {Files.write(jsonPath, defaultJSON.getBytes());} catch (IOException ignored) {}
+            popupMenu.remove(languageSwitch);
+            JOptionPane.showMessageDialog(null, languageObject.getString("restart_info"));
         });
         popupMenu.add(languageSwitch);
 
