@@ -1,5 +1,6 @@
 {
   "clock": "Clock",
+  "language": "Language",
   "setting": "Setting",
   "wait_time": "Wait Time:",
   "full_wait_time": "Full Wait Time:",

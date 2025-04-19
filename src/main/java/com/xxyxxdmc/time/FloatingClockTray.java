@@ -14,6 +14,7 @@ import java.awt.event.*;
 import java.awt.geom.RoundRectangle2D;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -99,7 +100,7 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
 
         frame.setShape(new RoundRectangle2D.Float(0, 0, width, height, 30, 30));
 
-        timeLabel = new JLabel("", JLabel.CENTER);
+        timeLabel = new JLabel("", SwingConstants.CENTER);
         InputStream fontStream = FloatingClockTray.class.getResourceAsStream("/minecraft.ttf");
         assert fontStream != null;
         Font MCFont = Font.createFont(Font.TRUETYPE_FONT, fontStream);
@@ -216,6 +217,12 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
             },5,TimeUnit.SECONDS);
         });
         popupMenu.add(fullScreenItem);
+        MenuItem languageSwitch = new MenuItem(languageObject.getString("language"));
+        languageSwitch.addActionListener(e -> {
+            if (Objects.equals(language, "en_us")) json.put("language", "zh_cn");
+            else json.put("language", "en_us");
+        });
+        popupMenu.add(languageSwitch);
 
         sleepMenu = new Menu(languageObject.getString("sleep"));
         sleep10 = new MenuItem(String.format(languageObject.getString("sleep_in_time"), "10"));
@@ -355,24 +362,28 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
 
     @Override
     public void nativeKeyPressed(NativeKeyEvent event) {
+        if (mainTimer==null) return;
         timeToShow=false;
         resetTimer();
     }
 
     @Override
     public void nativeMousePressed(NativeMouseEvent event) {
+        if (mainTimer==null) return;
         timeToShow=false;
         resetTimer();
     }
 
     @Override
     public void nativeMouseMoved(NativeMouseEvent event) {
+        if (mainTimer==null) return;
         timeToShow=false;
         resetTimer();
     }
 
     @Override
     public void nativeMouseDragged(NativeMouseEvent event) {
+        if (mainTimer==null) return;
         timeToShow=false;
         resetTimer();
     }
