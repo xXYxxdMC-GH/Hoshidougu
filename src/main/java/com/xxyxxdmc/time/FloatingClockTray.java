@@ -12,9 +12,9 @@ import javax.swing.event.ChangeEvent;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.RoundRectangle2D;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -22,6 +22,7 @@ import java.text.SimpleDateFormat;
 import java.time.LocalTime;
 import java.util.Date;
 import java.util.Objects;
+import java.util.Scanner;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -30,17 +31,13 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
     private static final JFrame frame = new JFrame("Clock");
     private static JLabel timeLabel;
     private static ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-    private static boolean isHidden = false;
+    private static boolean isHidden = false, isRunning = false, countdown = false, timeToShow = false, isFullScreen = false;
     private static int y = 50;
     private static double timer = 0;
-    private static boolean isRunning = false;
     private static int fullScreenTimer = 0;
-    private static boolean isFullScreen = false;
     private static int width = 300, height = 120; // 初始大小
     private static Timer resizeTimer;
-    private static int waitTimeAll;
-    private static int fullWaitTimeAll;
-    private static boolean timeToShow = false;
+    private static int waitTimeAll, fullWaitTimeAll;
     private static int R, G, B;
     private static Timer mainTimer;
     private static PopupMenu popupMenu;
@@ -48,7 +45,6 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
     private static MenuItem lowSleep10, lowSleep20, lowSleep30, lowSleep40, lowSleep45, lowSleep50, lowSleep60, lowSleepCustom;
     private static Menu sleepMenu, lowSleepMenu;
     private static SystemTray tray;
-    private static boolean countdown = false;
 
     public FloatingClockTray() {
     }
@@ -67,14 +63,12 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
 
         Path jarDir = Paths.get(System.getProperty("user.dir"));
         Path jsonPath = jarDir.resolve("data.json");
-        String languageJson = Objects.requireNonNull(FloatingClockTray.class.getResource("/en_us.json")).getPath();
-        File languageFile = new File(languageJson);
-        System.out.print(new String(languageJson.getBytes()));
         if (!Files.exists(jsonPath)) {
             createDefaultJSON(jsonPath);
         }
         String content = new String(Files.readAllBytes(jsonPath));
         JSONObject json = new JSONObject(content);
+        String language = json.getString("language");
         String color = json.getString("color");
         int waitTime = json.getInt("wait_time");
         int fullWaitTime = json.getInt("full_screen_wait_time");
@@ -84,10 +78,15 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
         G=Color.decode(color).getGreen();
         B=Color.decode(color).getBlue();
 
+        InputStream languageStream = FloatingClockTray.class.getResourceAsStream(String.format("/%s.json", language));
+        assert languageStream != null;
+        String languageText = new Scanner(languageStream, StandardCharsets.UTF_8).useDelimiter("\\A").next();
+        JSONObject languageObject = new JSONObject(languageText);
+
         tray = SystemTray.getSystemTray();
         Image image = Toolkit.getDefaultToolkit().getImage(FloatingClockTray.class.getResource("/xxyxxdmc.png"));
 
-        TrayIcon trayIcon = new TrayIcon(image, "Clock");
+        TrayIcon trayIcon = new TrayIcon(image, languageObject.getString("clock"));
         trayIcon.setImageAutoSize(true);
         tray.add(trayIcon);
 
@@ -122,9 +121,9 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
 
         // 托盘菜单
         popupMenu = new PopupMenu();
-        MenuItem settingItem = new MenuItem("Setting");
+        MenuItem settingItem = new MenuItem(languageObject.getString("setting"));
         settingItem.addActionListener(e -> {
-            JFrame settingFrame = new JFrame("Setting");
+            JFrame settingFrame = new JFrame(languageObject.getString("setting"));
             settingFrame.setSize(350, 250);
             settingFrame.setLocationRelativeTo(null); // 居中显示
             settingFrame.setResizable(false);
@@ -137,7 +136,7 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
             gbc.insets = new Insets(5, 5, 5, 5);
             gbc.fill = GridBagConstraints.HORIZONTAL;
 
-            JLabel waitLabel = new JLabel("Wait Time:");
+            JLabel waitLabel = new JLabel(languageObject.getString("wait_time"));
             JSlider waitSlider = new JSlider(5, 240, waitTimeAll);
             waitSlider.setMajorTickSpacing(50);
             waitSlider.setMinorTickSpacing(5);
@@ -145,7 +144,7 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
             waitSlider.setPaintLabels(true);
             waitSlider.addChangeListener((ChangeEvent e1) -> waitTimeAll = waitSlider.getValue());
 
-            JLabel fullWaitLabel = new JLabel("Full Wait Time:");
+            JLabel fullWaitLabel = new JLabel(languageObject.getString("full_wait_time"));
             JSlider fullWaitSlider = new JSlider(10, 720, fullWaitTimeAll);
             fullWaitSlider.setMajorTickSpacing(100);
             fullWaitSlider.setMinorTickSpacing(10);
@@ -153,13 +152,13 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
             fullWaitSlider.setPaintLabels(true);
             fullWaitSlider.addChangeListener((ChangeEvent e2) -> fullWaitTimeAll = fullWaitSlider.getValue());
 
-            JLabel colorLabel = new JLabel("Color:");
+            JLabel colorLabel = new JLabel(languageObject.getString("color"));
             JPanel colorPanel = new JPanel();
             colorPanel.setBackground(new Color(R, G, B));
             colorPanel.setPreferredSize(new Dimension(50, 30));
-            JButton colorButton = new JButton("Color");
+            JButton colorButton = new JButton(languageObject.getString("color"));
             colorButton.addActionListener(colorE -> {
-                Color selectedColor = JColorChooser.showDialog(frame, "Choose a Color", colorPanel.getBackground());
+                Color selectedColor = JColorChooser.showDialog(frame, languageObject.getString("choose_color"), colorPanel.getBackground());
                 if (selectedColor != null) {
                     colorPanel.setBackground(selectedColor);
                 }
@@ -187,7 +186,7 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
                     String fullWaitText = String.valueOf(fullWaitSlider.getValue());
                     Path jarDir = Paths.get(System.getProperty("user.dir"));
                     Path jsonPath = jarDir.resolve("data.json");
-                    String defaultJSON = String.format("{\n  \"color\": \"%s\",\n  \"full_screen_wait_time\": %s,\n  \"wait_time\": %s\n}", hex, fullWaitText, waitText);
+                    String defaultJSON = String.format("{\n  \"language\": \"%s\",\n  \"color\": \"%s\",\n  \"full_screen_wait_time\": %s,\n  \"wait_time\": %s\n}", language, hex, fullWaitText, waitText);
                     try {Files.write(jsonPath, defaultJSON.getBytes());} catch (IOException ignored) {}
                     fullWaitTimeAll= Integer.parseInt(fullWaitText);
                     waitTimeAll= Integer.parseInt(waitText);
@@ -200,13 +199,13 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
         });
         popupMenu.add(settingItem);
 
-        MenuItem countdownItem = new MenuItem("Countdown");
+        MenuItem countdownItem = new MenuItem(languageObject.getString("countdown"));
         countdownItem.addActionListener(e -> {
             countdown=!countdown;
-            if (countdown) countdownItem.setLabel("Countdown");
-            else countdownItem.setLabel("Countdown ✔");
+            if (!countdown) countdownItem.setLabel(languageObject.getString("countdown"));
+            else countdownItem.setLabel(languageObject.getString("countdown")+languageObject.getString("yes"));
         });
-        MenuItem fullScreenItem = new MenuItem("Full Screen");
+        MenuItem fullScreenItem = new MenuItem(languageObject.getString("full_screen"));
         fullScreenItem.addActionListener(e -> {
             ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(3);
             scheduledExecutorService.schedule(() -> {
@@ -218,15 +217,15 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
         });
         popupMenu.add(fullScreenItem);
 
-        sleepMenu = new Menu("Sleep");
-        sleep10 = new MenuItem("Sleep 10 minutes");
-        sleep20 = new MenuItem("Sleep 20 minutes");
-        sleep30 = new MenuItem("Sleep 30 minutes");
-        sleep40 = new MenuItem("Sleep 40 minutes");
-        sleep45 = new MenuItem("Sleep 45 minutes");
-        sleep50 = new MenuItem("Sleep 50 minutes");
-        sleep60 = new MenuItem("Sleep 60 minutes");
-        sleepCustom = new MenuItem("Sleep Custom Time");
+        sleepMenu = new Menu(languageObject.getString("sleep"));
+        sleep10 = new MenuItem(String.format(languageObject.getString("sleep_in_time"), "10"));
+        sleep20 = new MenuItem(String.format(languageObject.getString("sleep_in_time"), "20"));
+        sleep30 = new MenuItem(String.format(languageObject.getString("sleep_in_time"), "30"));
+        sleep40 = new MenuItem(String.format(languageObject.getString("sleep_in_time"), "40"));
+        sleep45 = new MenuItem(String.format(languageObject.getString("sleep_in_time"), "45"));
+        sleep50 = new MenuItem(String.format(languageObject.getString("sleep_in_time"), "50"));
+        sleep60 = new MenuItem(String.format(languageObject.getString("sleep_in_time"), "60"));
+        sleepCustom = new MenuItem(languageObject.getString("sleep_custom_time"));
         sleepMenu.add(sleep10);
         sleepMenu.add(sleep20);
         sleepMenu.add(sleep30);
@@ -264,15 +263,15 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
             sleepInTime(60);
             removeAllSleep();
         });
-        lowSleepMenu = new Menu("Low Sleep");
-        lowSleep10 = new MenuItem("Low Sleep 10 minutes");
-        lowSleep20 = new MenuItem("Low Sleep 20 minutes");
-        lowSleep30 = new MenuItem("Low Sleep 30 minutes");
-        lowSleep40 = new MenuItem("Low Sleep 40 minutes");
-        lowSleep45 = new MenuItem("Low Sleep 45 minutes");
-        lowSleep50 = new MenuItem("Low Sleep 50 minutes");
-        lowSleep60 = new MenuItem("Low Sleep 60 minutes");
-        lowSleepCustom = new MenuItem("Low Sleep Custom Time");
+        lowSleepMenu = new Menu(languageObject.getString("low_sleep"));
+        lowSleep10 = new MenuItem(String.format(languageObject.getString("low_sleep_in_time"), "10"));
+        lowSleep20 = new MenuItem(String.format(languageObject.getString("low_sleep_in_time"), "20"));
+        lowSleep30 = new MenuItem(String.format(languageObject.getString("low_sleep_in_time"), "30"));
+        lowSleep40 = new MenuItem(String.format(languageObject.getString("low_sleep_in_time"), "40"));
+        lowSleep45 = new MenuItem(String.format(languageObject.getString("low_sleep_in_time"), "45"));
+        lowSleep50 = new MenuItem(String.format(languageObject.getString("low_sleep_in_time"), "50"));
+        lowSleep60 = new MenuItem(String.format(languageObject.getString("low_sleep_in_time"), "60"));
+        lowSleepCustom = new MenuItem(languageObject.getString("low_sleep_custom_time"));
         lowSleepMenu.add(lowSleep10);
         lowSleepMenu.add(lowSleep20);
         lowSleepMenu.add(lowSleep30);
@@ -307,7 +306,7 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
 
         popupMenu.add(countdownItem);
 
-        MenuItem exitItem = new MenuItem("Exit");
+        MenuItem exitItem = new MenuItem(languageObject.getString("exit"));
         exitItem.addActionListener(e -> System.exit(0));
         popupMenu.add(exitItem);
 
@@ -323,9 +322,8 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
             }
         });
 
-        String message = "Do you want to enable low sleep for 40 minutes now?";
-        JLabel MSG = new JLabel(message);
-        boolean result = showConfirmDialogWithTimeout(MSG, "Ask", 5 * 1000);
+        JLabel MSG = new JLabel(languageObject.getString("ask_sentence"));
+        boolean result = showConfirmDialogWithTimeout(MSG, languageObject.getString("ask"), 5 * 1000);
 
         if (!result) {
             lowSleepInTime(40);
@@ -557,8 +555,8 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
         resizeTimer.setRepeats(true);
         resizeTimer.start();
     }
-    private static void createDefaultJSON(Path path) {
-        String defaultJSON = "{\n  \"color\": \"#FFFFFF\",\n  \"full_screen_wait_time\": 600,\n  \"wait_time\": 30\n}";
+    static void createDefaultJSON(Path path) {
+        String defaultJSON = "{\n  \"language\": \"en_us\",\n  \"color\": \"#FFFFFF\",\n  \"full_screen_wait_time\": 600,\n  \"wait_time\": 30\n}";
         try {
             Files.write(path, defaultJSON.getBytes());
         } catch (IOException ignored) {

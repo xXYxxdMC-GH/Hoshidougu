@@ -19,6 +19,5 @@
       </library>
     </orderEntry>
     <orderEntry type="library" name="org.json-1.6-20240205" level="project" />
-    <orderEntry type="library" name="jna-platform-5.17.0" level="project" />
   </component>
 </module>
