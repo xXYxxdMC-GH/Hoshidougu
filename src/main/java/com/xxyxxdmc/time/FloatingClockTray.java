@@ -12,6 +12,7 @@ import javax.swing.event.ChangeEvent;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.RoundRectangle2D;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -20,6 +21,7 @@ import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.time.LocalTime;
 import java.util.Date;
+import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -57,8 +59,7 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
         }
         try {
             GlobalScreen.registerNativeHook();
-        } catch (Exception ignored) {
-        }
+        } catch (Exception ignored) {}
         GlobalScreen.addNativeKeyListener(new FloatingClockTray());
         GlobalScreen.addNativeMouseListener(new FloatingClockTray());
         GlobalScreen.addNativeMouseMotionListener(new FloatingClockTray());
@@ -66,6 +67,9 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
 
         Path jarDir = Paths.get(System.getProperty("user.dir"));
         Path jsonPath = jarDir.resolve("data.json");
+        String languageJson = Objects.requireNonNull(FloatingClockTray.class.getResource("/en_us.json")).getPath();
+        File languageFile = new File(languageJson);
+        System.out.print(new String(languageJson.getBytes()));
         if (!Files.exists(jsonPath)) {
             createDefaultJSON(jsonPath);
         }
@@ -82,6 +86,7 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
 
         tray = SystemTray.getSystemTray();
         Image image = Toolkit.getDefaultToolkit().getImage(FloatingClockTray.class.getResource("/xxyxxdmc.png"));
+
         TrayIcon trayIcon = new TrayIcon(image, "Clock");
         trayIcon.setImageAutoSize(true);
         tray.add(trayIcon);
@@ -198,7 +203,8 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
         MenuItem countdownItem = new MenuItem("Countdown");
         countdownItem.addActionListener(e -> {
             countdown=!countdown;
-            countdownItem.setLabel("Countdown ✔");
+            if (countdown) countdownItem.setLabel("Countdown");
+            else countdownItem.setLabel("Countdown ✔");
         });
         MenuItem fullScreenItem = new MenuItem("Full Screen");
         fullScreenItem.addActionListener(e -> {
@@ -215,16 +221,20 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
         sleepMenu = new Menu("Sleep");
         sleep10 = new MenuItem("Sleep 10 minutes");
         sleep20 = new MenuItem("Sleep 20 minutes");
+        sleep30 = new MenuItem("Sleep 30 minutes");
         sleep40 = new MenuItem("Sleep 40 minutes");
         sleep45 = new MenuItem("Sleep 45 minutes");
         sleep50 = new MenuItem("Sleep 50 minutes");
         sleep60 = new MenuItem("Sleep 60 minutes");
+        sleepCustom = new MenuItem("Sleep Custom Time");
         sleepMenu.add(sleep10);
         sleepMenu.add(sleep20);
+        sleepMenu.add(sleep30);
         sleepMenu.add(sleep40);
         sleepMenu.add(sleep45);
         sleepMenu.add(sleep50);
         sleepMenu.add(sleep60);
+        sleepMenu.add(sleepCustom);
         popupMenu.add(sleepMenu);
         sleep10.addActionListener(e -> {
             sleepInTime(10);
@@ -232,6 +242,10 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
         });
         sleep20.addActionListener(e -> {
             sleepInTime(20);
+            removeAllSleep();
+        });
+        sleep30.addActionListener(e -> {
+            sleepInTime(30);
             removeAllSleep();
         });
         sleep40.addActionListener(e -> {
@@ -253,28 +267,41 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
         lowSleepMenu = new Menu("Low Sleep");
         lowSleep10 = new MenuItem("Low Sleep 10 minutes");
         lowSleep20 = new MenuItem("Low Sleep 20 minutes");
+        lowSleep30 = new MenuItem("Low Sleep 30 minutes");
         lowSleep40 = new MenuItem("Low Sleep 40 minutes");
+        lowSleep45 = new MenuItem("Low Sleep 45 minutes");
+        lowSleep50 = new MenuItem("Low Sleep 50 minutes");
         lowSleep60 = new MenuItem("Low Sleep 60 minutes");
+        lowSleepCustom = new MenuItem("Low Sleep Custom Time");
+        lowSleepMenu.add(lowSleep10);
+        lowSleepMenu.add(lowSleep20);
+        lowSleepMenu.add(lowSleep30);
+        lowSleepMenu.add(lowSleep40);
+        lowSleepMenu.add(lowSleep45);
+        lowSleepMenu.add(lowSleep50);
+        lowSleepMenu.add(lowSleep60);
+        lowSleepMenu.add(lowSleepCustom);
         lowSleep10.addActionListener(e -> {
             lowSleepInTime(10);
             removeAllLowSleep();
         });lowSleep20.addActionListener(e -> {
             lowSleepInTime(20);
             removeAllLowSleep();
+        });lowSleep30.addActionListener(e -> {
+            lowSleepInTime(30);
+            removeAllLowSleep();
         });lowSleep40.addActionListener(e -> {
             lowSleepInTime(40);
+            removeAllLowSleep();
+        });lowSleep45.addActionListener(e -> {
+            lowSleepInTime(45);
+            removeAllLowSleep();
+        });lowSleep50.addActionListener(e -> {
+            lowSleepInTime(50);
             removeAllLowSleep();
         });lowSleep60.addActionListener(e -> {
             lowSleepInTime(60);
             removeAllLowSleep();
-        });lowSleepMenu.addActionListener(e -> {
-            popupMenu.add(lowSleep10);
-            popupMenu.add(lowSleep20);
-            popupMenu.add(lowSleep40);
-            popupMenu.add(lowSleep60);
-            popupMenu.remove(sleepMenu);
-            popupMenu.remove(lowSleepMenu);
-            tray.getTrayIcons()[0].setPopupMenu(popupMenu);
         });
         popupMenu.add(lowSleepMenu);
 
@@ -380,7 +407,7 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
             popupMenu.add(sleepMenu);
         }, minutes, TimeUnit.MINUTES);
     }
-    
+
     public static void removeAllLowSleep() {
         popupMenu.remove(lowSleep10);
         popupMenu.remove(lowSleep20);
@@ -388,7 +415,7 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
         popupMenu.remove(lowSleep60);
         tray.getTrayIcons()[0].setPopupMenu(popupMenu);
     }
-    
+
     public static void removeAllSleep() {
         popupMenu.remove(sleep10);
         popupMenu.remove(sleep20);
@@ -457,7 +484,7 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
             });
             swingTimer.start();
             frame.setVisible(true);
-            
+
         }, (waitTimeAll* 1000L)/2, TimeUnit.MILLISECONDS);
     }
 
