@@ -1,0 +1,22 @@
+{
+  "clock": "時計",
+  "language": "言語",
+  "setting": "設定",
+  "wait_time": "待機時間:",
+  "full_wait_time": "全画面待機時間:",
+  "color": "色:",
+  "choose_color": "色を選択",
+  "countdown": "カウントダウン",
+  "yes": " ✓",
+  "full_screen": "全画面",
+  "sleep": "スリープ",
+  "sleep_in_time": "スリープ %s 分",
+  "sleep_custom_time": "カスタムスリープ時間",
+  "low_sleep": "低スリープ",
+  "low_sleep_in_time": "低スリープ %s 分",
+  "low_sleep_custom_time": "カスタム低スリープ時間",
+  "exit": "終了",
+  "ask_sentence": "今すぐ40分間の低スリープを開始しますか？",
+  "ask": "質問",
+  "restart_info": "これらの設定は再起動後に有効になります。"
+}

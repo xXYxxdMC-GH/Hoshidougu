@@ -8,7 +8,6 @@ import org.json.JSONObject;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import javax.swing.event.ChangeEvent;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.RoundRectangle2D;
@@ -19,9 +18,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
-import java.time.LocalTime;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
-import java.util.Objects;
 import java.util.Scanner;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -29,7 +28,7 @@ import java.util.concurrent.TimeUnit;
 
 public class FloatingClockTray implements NativeKeyListener, NativeMouseListener, NativeMouseInputListener, NativeMouseWheelListener {
     private static final JFrame frame = new JFrame("Clock");
-    private static JLabel timeLabel;
+    private static JLabel timeLabel, weekLabel;
     private static ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     private static boolean isHidden = false, isRunning = false, countdown = false, timeToShow = false, isFullScreen = false;
     private static int y = 50;
@@ -38,18 +37,28 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
     private static int width = 300, height = 120; // 初始大小
     private static Timer resizeTimer;
     private static int waitTimeAll, fullWaitTimeAll;
-    private static int R, G, B;
+    public static int R, G, B;
     private static Timer mainTimer;
     private static PopupMenu popupMenu;
     private static MenuItem sleep10, sleep20, sleep30, sleep40, sleep45, sleep50, sleep60, sleepCustom;
     private static MenuItem lowSleep10, lowSleep20, lowSleep30, lowSleep40, lowSleep45, lowSleep50, lowSleep60, lowSleepCustom;
     private static Menu sleepMenu, lowSleepMenu;
     private static SystemTray tray;
+    private static Font minecraftFont;
 
     public FloatingClockTray() {
     }
+    static {
+        InputStream fontStream = FloatingClockTray.class.getResourceAsStream("/minecraft.ttf");
+        assert fontStream != null;
+        try {
+            minecraftFont = Font.createFont(Font.TRUETYPE_FONT, fontStream);
+        } catch (FontFormatException | IOException ignored) {}
+    }
 
     public static void main(String[] args) throws Exception {
+        LocalDate today = LocalDate.now(ZoneId.systemDefault());
+        DayOfWeek dayOfWeek = today.getDayOfWeek();
         if (!SystemTray.isSupported()) {
             throw new Exception();
         }
@@ -100,10 +109,8 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
         frame.setShape(new RoundRectangle2D.Float(0, 0, width, height, 30, 30));
 
         timeLabel = new JLabel("", SwingConstants.CENTER);
-        InputStream fontStream = FloatingClockTray.class.getResourceAsStream("/minecraft.ttf");
-        assert fontStream != null;
-        Font MCFont = Font.createFont(Font.TRUETYPE_FONT, fontStream);
-        timeLabel.setFont(MCFont.deriveFont(Font.PLAIN, 48));
+
+        timeLabel.setFont(minecraftFont.deriveFont(Font.PLAIN, 48));
         frame.add(timeLabel);
         frame.getContentPane().setBackground(Color.BLACK);
         timeLabel.setForeground(new Color(R, G, B));
@@ -124,33 +131,28 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
         MenuItem settingItem = new MenuItem(languageObject.getString("setting"));
         settingItem.addActionListener(e -> {
             JFrame settingFrame = new JFrame(languageObject.getString("setting"));
-            settingFrame.setSize(350, 250);
+            settingFrame.setSize(300, 150);
             settingFrame.setLocationRelativeTo(null); // 居中显示
             settingFrame.setResizable(false);
             settingFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
             JPanel mainPanel = new JPanel();
+            mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
             mainPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
-            mainPanel.setLayout(new GridBagLayout());
-            GridBagConstraints gbc = new GridBagConstraints();
-            gbc.insets = new Insets(5, 5, 5, 5);
-            gbc.fill = GridBagConstraints.HORIZONTAL;
 
             JLabel waitLabel = new JLabel(languageObject.getString("wait_time"));
-            JSlider waitSlider = new JSlider(5, 240, waitTimeAll);
-            waitSlider.setMajorTickSpacing(50);
-            waitSlider.setMinorTickSpacing(5);
-            waitSlider.setPaintTicks(true);
-            waitSlider.setPaintLabels(true);
-            waitSlider.addChangeListener((ChangeEvent e1) -> waitTimeAll = waitSlider.getValue());
+            JSlider waitSlider = createSlider(5, 240, waitTimeAll);
+            JLabel waitValueLabel = new JLabel(String.valueOf(waitTimeAll));
+            waitSlider.addChangeListener(e1 -> waitValueLabel.setText(String.valueOf(waitSlider.getValue())));
+            waitSlider.setPaintLabels(false);
+            waitSlider.setPaintTicks(false);
 
             JLabel fullWaitLabel = new JLabel(languageObject.getString("full_wait_time"));
-            JSlider fullWaitSlider = new JSlider(10, 720, fullWaitTimeAll);
-            fullWaitSlider.setMajorTickSpacing(100);
-            fullWaitSlider.setMinorTickSpacing(10);
-            fullWaitSlider.setPaintTicks(true);
-            fullWaitSlider.setPaintLabels(true);
-            fullWaitSlider.addChangeListener((ChangeEvent e2) -> fullWaitTimeAll = fullWaitSlider.getValue());
+            JSlider fullWaitSlider = createSlider(2, 720, fullWaitTimeAll);
+            JLabel fullWaitValueLabel = new JLabel(String.valueOf(fullWaitTimeAll));
+            fullWaitSlider.addChangeListener(e2 -> fullWaitValueLabel.setText(String.valueOf(fullWaitSlider.getValue())));
+            fullWaitSlider.setPaintLabels(false);
+            fullWaitSlider.setPaintTicks(false);
 
             JLabel colorLabel = new JLabel(languageObject.getString("color"));
             JPanel colorPanel = new JPanel();
@@ -164,18 +166,12 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
                 }
             });
 
-            gbc.gridx = 0; gbc.gridy = 0; mainPanel.add(waitLabel, gbc);
-            gbc.gridx = 1; mainPanel.add(waitSlider, gbc);
-
-            gbc.gridx = 0; gbc.gridy = 1; mainPanel.add(fullWaitLabel, gbc);
-            gbc.gridx = 1; mainPanel.add(fullWaitSlider, gbc);
-
-            gbc.gridx = 0; gbc.gridy = 2; mainPanel.add(colorLabel, gbc);
-            gbc.gridx = 1; mainPanel.add(colorButton, gbc);
-            gbc.gridx = 2; mainPanel.add(colorPanel, gbc);
-
             settingFrame.add(mainPanel);
             settingFrame.setVisible(true);
+
+            mainPanel.add(createRow(waitLabel, waitSlider, waitValueLabel));
+            mainPanel.add(createRow(fullWaitLabel, fullWaitSlider, fullWaitValueLabel));
+            mainPanel.add(createRow(colorLabel, colorButton, colorPanel));
 
             settingFrame.addWindowListener(new WindowAdapter() {
                 @Override
@@ -216,17 +212,30 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
             },5,TimeUnit.SECONDS);
         });
         popupMenu.add(fullScreenItem);
-        MenuItem languageSwitch = new MenuItem("语言");
-        languageSwitch.addActionListener(e -> {
-            String currentLanguage;
-            if (Objects.equals(language, "en_us")) currentLanguage = "zh_cn";
-            else currentLanguage = "en_us";
-            String defaultJSON = String.format("{\n  \"language\": \"%s\",\n  \"color\": \"%s\",\n  \"full_screen_wait_time\": %s,\n  \"wait_time\": %s\n}", currentLanguage, color, fullWaitTimeAll, waitTimeAll);
+        Menu languageMenu = new Menu(languageObject.getString("language"));
+        MenuItem englishTL = new MenuItem("English");
+        MenuItem chineseTL = new MenuItem("中文");
+        MenuItem japaneseTL = new MenuItem("日本語");
+        languageMenu.add(englishTL);
+        languageMenu.add(chineseTL);
+        languageMenu.add(japaneseTL);
+        englishTL.addActionListener(e -> {
+            String defaultJSON = String.format("{\n  \"language\": \"en_us\",\n  \"color\": \"%s\",\n  \"full_screen_wait_time\": %s,\n  \"wait_time\": %s\n}", color, fullWaitTimeAll, waitTimeAll);
             try {Files.write(jsonPath, defaultJSON.getBytes());} catch (IOException ignored) {}
-            popupMenu.remove(languageSwitch);
+            popupMenu.remove(languageMenu);
+            JOptionPane.showMessageDialog(null, languageObject.getString("restart_info"));
+        });chineseTL.addActionListener(e -> {
+            String defaultJSON = String.format("{\n  \"language\": \"zh_cn\",\n  \"color\": \"%s\",\n  \"full_screen_wait_time\": %s,\n  \"wait_time\": %s\n}", color, fullWaitTimeAll, waitTimeAll);
+            try {Files.write(jsonPath, defaultJSON.getBytes());} catch (IOException ignored) {}
+            popupMenu.remove(languageMenu);
+            JOptionPane.showMessageDialog(null, languageObject.getString("restart_info"));
+        });japaneseTL.addActionListener(e -> {
+            String defaultJSON = String.format("{\n  \"language\": \"ja_jp\",\n  \"color\": \"%s\",\n  \"full_screen_wait_time\": %s,\n  \"wait_time\": %s\n}", color, fullWaitTimeAll, waitTimeAll);
+            try {Files.write(jsonPath, defaultJSON.getBytes());} catch (IOException ignored) {}
+            popupMenu.remove(languageMenu);
             JOptionPane.showMessageDialog(null, languageObject.getString("restart_info"));
         });
-        popupMenu.add(languageSwitch);
+        popupMenu.add(languageMenu);
 
         sleepMenu = new Menu(languageObject.getString("sleep"));
         sleep10 = new MenuItem(String.format(languageObject.getString("sleep_in_time"), "10"));
@@ -248,31 +257,53 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
         popupMenu.add(sleepMenu);
         sleep10.addActionListener(e -> {
             sleepInTime(10);
-            removeAllSleep();
+            popupMenu.remove(sleepMenu);
+            popupMenu.remove(lowSleepMenu);
+            tray.getTrayIcons()[0].setPopupMenu(popupMenu);
         });
         sleep20.addActionListener(e -> {
             sleepInTime(20);
-            removeAllSleep();
+            popupMenu.remove(sleepMenu);
+            popupMenu.remove(lowSleepMenu);
+            tray.getTrayIcons()[0].setPopupMenu(popupMenu);
         });
         sleep30.addActionListener(e -> {
             sleepInTime(30);
-            removeAllSleep();
+            popupMenu.remove(sleepMenu);
+            popupMenu.remove(lowSleepMenu);
+            tray.getTrayIcons()[0].setPopupMenu(popupMenu);
         });
         sleep40.addActionListener(e -> {
             sleepInTime(40);
-            removeAllSleep();
+            popupMenu.remove(sleepMenu);
+            popupMenu.remove(lowSleepMenu);
+            tray.getTrayIcons()[0].setPopupMenu(popupMenu);
         });
         sleep45.addActionListener(e -> {
             sleepInTime(40);
-            removeAllSleep();
+            popupMenu.remove(sleepMenu);
+            popupMenu.remove(lowSleepMenu);
+            tray.getTrayIcons()[0].setPopupMenu(popupMenu);
         });
         sleep50.addActionListener(e -> {
             sleepInTime(40);
-            removeAllSleep();
+            popupMenu.remove(sleepMenu);
+            popupMenu.remove(lowSleepMenu);
+            tray.getTrayIcons()[0].setPopupMenu(popupMenu);
         });
         sleep60.addActionListener(e -> {
             sleepInTime(60);
-            removeAllSleep();
+            popupMenu.remove(sleepMenu);
+            popupMenu.remove(lowSleepMenu);
+            tray.getTrayIcons()[0].setPopupMenu(popupMenu);
+        });
+        sleepCustom.addActionListener(e -> {
+            String input = JOptionPane.showInputDialog(null, "Please enter minutes", "Custom", JOptionPane.PLAIN_MESSAGE);
+            if (input==null) return;
+            sleepInTime(Integer.parseInt(input));
+            popupMenu.remove(sleepMenu);
+            popupMenu.remove(lowSleepMenu);
+            tray.getTrayIcons()[0].setPopupMenu(popupMenu);
         });
         lowSleepMenu = new Menu(languageObject.getString("low_sleep"));
         lowSleep10 = new MenuItem(String.format(languageObject.getString("low_sleep_in_time"), "10"));
@@ -293,25 +324,46 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
         lowSleepMenu.add(lowSleepCustom);
         lowSleep10.addActionListener(e -> {
             lowSleepInTime(10);
-            removeAllLowSleep();
+            popupMenu.remove(sleepMenu);
+            popupMenu.remove(lowSleepMenu);
+            tray.getTrayIcons()[0].setPopupMenu(popupMenu);
         });lowSleep20.addActionListener(e -> {
             lowSleepInTime(20);
-            removeAllLowSleep();
+            popupMenu.remove(sleepMenu);
+            popupMenu.remove(lowSleepMenu);
+            tray.getTrayIcons()[0].setPopupMenu(popupMenu);
         });lowSleep30.addActionListener(e -> {
             lowSleepInTime(30);
-            removeAllLowSleep();
+            popupMenu.remove(sleepMenu);
+            popupMenu.remove(lowSleepMenu);
+            tray.getTrayIcons()[0].setPopupMenu(popupMenu);
         });lowSleep40.addActionListener(e -> {
             lowSleepInTime(40);
-            removeAllLowSleep();
+            popupMenu.remove(sleepMenu);
+            popupMenu.remove(lowSleepMenu);
+            tray.getTrayIcons()[0].setPopupMenu(popupMenu);
         });lowSleep45.addActionListener(e -> {
             lowSleepInTime(45);
-            removeAllLowSleep();
+            popupMenu.remove(sleepMenu);
+            popupMenu.remove(lowSleepMenu);
+            tray.getTrayIcons()[0].setPopupMenu(popupMenu);
         });lowSleep50.addActionListener(e -> {
             lowSleepInTime(50);
-            removeAllLowSleep();
+            popupMenu.remove(sleepMenu);
+            popupMenu.remove(lowSleepMenu);
+            tray.getTrayIcons()[0].setPopupMenu(popupMenu);
         });lowSleep60.addActionListener(e -> {
             lowSleepInTime(60);
-            removeAllLowSleep();
+            popupMenu.remove(sleepMenu);
+            popupMenu.remove(lowSleepMenu);
+            tray.getTrayIcons()[0].setPopupMenu(popupMenu);
+        });lowSleepCustom.addActionListener(e -> {
+            String input = JOptionPane.showInputDialog(null, "Please enter minutes", "Custom", JOptionPane.PLAIN_MESSAGE);
+            if (input==null) return;
+            lowSleepInTime(Integer.parseInt(input));
+            popupMenu.remove(sleepMenu);
+            popupMenu.remove(lowSleepMenu);
+            tray.getTrayIcons()[0].setPopupMenu(popupMenu);
         });
         popupMenu.add(lowSleepMenu);
 
@@ -340,28 +392,46 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
             lowSleepInTime(40);
             popupMenu.remove(sleepMenu);
             popupMenu.remove(lowSleepMenu);
-            removeAllLowSleep();
+            tray.getTrayIcons()[0].setPopupMenu(popupMenu);
         } else mainTimer.start();
     }
 
+    private static JSlider createSlider(int min, int max, int value) {
+        JSlider slider = new JSlider(min, max, value);
+        slider.setMajorTickSpacing(50);
+        slider.setMinorTickSpacing(5);
+        slider.setPaintTicks(true);
+        slider.setPaintLabels(true);
+        slider.setPreferredSize(new Dimension(200, 50)); // 增加宽度
+        return slider;
+    }
+
+    private static JPanel createRow(JComponent label, JComponent input, JComponent value) {
+        JPanel rowPanel = new JPanel(new BorderLayout(10, 10));
+        rowPanel.add(label, BorderLayout.WEST);
+        rowPanel.add(input, BorderLayout.CENTER);
+        rowPanel.add(value, BorderLayout.EAST);
+        return rowPanel;
+    }
+
     private static void updateTime() {
-        String time = "00:00:00";
+        String time;
         LocalTime now = LocalTime.now();
-        int hour = now.getHour();
-        int minute = now.getMinute();
-        if (countdown && hour<=17) {
-            if (minute<=40){
-                int second = now.getSecond();
-                time = String.format("%s%d:%s%d:%s%d",(17-hour>0&&17-hour<10)?"0":"",17-hour,(40-minute>0&&40-minute<10)?"0":"",40-minute,(60-second<10)?"0":"",60-second);
-                timeLabel.setText(time);
+        if (countdown) {
+            LocalTime targetTime = LocalTime.of(17, 40, 0); // 倒计时目标时间
+            if (now.isBefore(targetTime)) {
+                Duration duration = Duration.between(now, targetTime);
+                long hours = duration.toHours();
+                long minutes = duration.toMinutes() % 60;
+                long seconds = duration.getSeconds() % 60;
+                time = String.format("%02d:%02d:%02d", hours, minutes, seconds);
             } else {
-                timeLabel.setText(time);
+                time = "00:00:00";
             }
         } else {
-            time = new SimpleDateFormat("HH:mm:ss").format(new Date());
-            timeLabel.setText(time);
+            time = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
         }
-
+        timeLabel.setText(time);
     }
 
     @Override
@@ -403,9 +473,9 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
         scheduler.schedule(() -> {
             isRunning=false;
             resetTimer();
-            removeAllSleep();
             popupMenu.add(sleepMenu);
             popupMenu.add(lowSleepMenu);
+            tray.getTrayIcons()[0].setPopupMenu(popupMenu);
         }, minutes, TimeUnit.MINUTES);
     }
 
@@ -415,26 +485,10 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
         isFullScreen=false;
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
         scheduler.schedule(() -> {
-            removeAllLowSleep();
             popupMenu.add(lowSleepMenu);
             popupMenu.add(sleepMenu);
+            tray.getTrayIcons()[0].setPopupMenu(popupMenu);
         }, minutes, TimeUnit.MINUTES);
-    }
-
-    public static void removeAllLowSleep() {
-        popupMenu.remove(lowSleep10);
-        popupMenu.remove(lowSleep20);
-        popupMenu.remove(lowSleep40);
-        popupMenu.remove(lowSleep60);
-        tray.getTrayIcons()[0].setPopupMenu(popupMenu);
-    }
-
-    public static void removeAllSleep() {
-        popupMenu.remove(sleep10);
-        popupMenu.remove(sleep20);
-        popupMenu.remove(sleep40);
-        popupMenu.remove(sleep60);
-        tray.getTrayIcons()[0].setPopupMenu(popupMenu);
     }
 
     public static double easeInBack(double x) {
@@ -505,33 +559,26 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
         if (isRunning) return;
         isRunning=true;
         mainTimer.stop();
-        resizeTimer = new Timer(20, new ActionListener()  {
-            final Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if ((width < screenSize.width || height < screenSize.height) && timer < 1) {
-                    timer += 0.02;
-                    width = (int) Math.ceil(300 + ((screenSize.width - 300) * easeOutExpo(timer)));
-                    height = (int) Math.ceil(120 +((screenSize.height - 120) * easeOutExpo(timer)));
-                    y = 50 + (int) (((double) ((screenSize.height - frame.getHeight()) / 2) - 50) * easeOutExpo(timer));
-                    frame.setLocation((screenSize.width - frame.getWidth()) / 2, y);
-                    frame.setPreferredSize(new Dimension(width, height));
-                    frame.pack();
-                    frame.setShape(new RoundRectangle2D.Float(0, 0, width, height, 0, 0));
-                    InputStream fontStream = FloatingClockTray.class.getResourceAsStream("/minecraft.ttf");
-                    assert fontStream != null;
-                    Font MCFont;
-                    try {MCFont = Font.createFont(Font.TRUETYPE_FONT, fontStream);} catch (FontFormatException | IOException ex) {throw new RuntimeException(ex);}
-                    timeLabel.setFont(MCFont.deriveFont(Font.PLAIN, (float) (48 + ((260 - 48) * easeOutExpo(timer)))));
-                } else {
-                    frame.setLocation(((screenSize.width - frame.getWidth()) / 2), ((screenSize.height - frame.getHeight()) / 2));
-                    frame.setPreferredSize(screenSize);
-                    frame.pack();
-                    frame.setShape(new RoundRectangle2D.Float(0, 0, screenSize.width, screenSize.height, 0, 0));
-                    timer=0;
-                    isRunning=false;
-                    ((Timer) e.getSource()).stop();
-                }
+        final Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        resizeTimer = new Timer(20, e -> {
+            if (timer < 1) {
+                timer += 0.02;
+                width = (int) Math.ceil(300 + ((screenSize.width - 300) * easeOutExpo(timer)));
+                height = (int) Math.ceil(120 +((screenSize.height - 120) * easeOutExpo(timer)));
+                y = 50 + (int) (((double) ((screenSize.height - frame.getHeight()) / 2) - 50) * easeOutExpo(timer));
+                frame.setLocation((screenSize.width - frame.getWidth()) / 2, y);
+                frame.setPreferredSize(new Dimension(width, height));
+                frame.pack();
+                frame.setShape(new RoundRectangle2D.Float(0, 0, width, height, 0, 0));
+                timeLabel.setFont(minecraftFont.deriveFont(Font.PLAIN, (float) (48 + ((260 - 48) * easeOutExpo(timer)))));
+            } else {
+                frame.setLocation(((screenSize.width - frame.getWidth()) / 2), ((screenSize.height - frame.getHeight()) / 2));
+                frame.setPreferredSize(screenSize);
+                frame.pack();
+                frame.setShape(new RoundRectangle2D.Double(0, 0, screenSize.width, screenSize.height, 30 * (1-easeOutExpo(timer)), 30 * (1-easeOutExpo(timer))));
+                timer=0;
+                isRunning=false;
+                ((Timer) e.getSource()).stop();
             }
         });
         resizeTimer.setRepeats(true);
@@ -542,29 +589,23 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
         if (isRunning) return;
         isRunning=true;
         mainTimer.start();
-        resizeTimer = new Timer(20, new ActionListener()  {
-            final Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if ((width < screenSize.width || height < screenSize.height) && timer < 1) {
-                    timer += 0.02;
-                    width = (int) Math.ceil(screenSize.width + ((300 - screenSize.width) * easeOutExpo(timer)));
-                    height = (int) Math.ceil(screenSize.height + ((120 - screenSize.height) * easeOutExpo(timer)));
-                    y = (screenSize.height - frame.getHeight()) / 2 + (int) ((50 - (double) (screenSize.height - frame.getHeight()) / 2) * easeOutExpo(timer));
-                    frame.setLocation((screenSize.width - frame.getWidth()) / 2, y);
-                    frame.setPreferredSize(new Dimension(width, height));
-                    frame.pack();
-                    frame.setShape(new RoundRectangle2D.Float(0, 0, width, height, 30, 30));
-                    InputStream fontStream = FloatingClockTray.class.getResourceAsStream("/minecraft.ttf");
-                    assert fontStream != null;
-                    Font MCFont;
-                    try {MCFont = Font.createFont(Font.TRUETYPE_FONT, fontStream);} catch (FontFormatException | IOException ex) {throw new RuntimeException(ex);}
-                    timeLabel.setFont(MCFont.deriveFont(Font.PLAIN, (float) (260 + ((48 - 260) * easeOutExpo(timer)))));
-                } else {
-                    timer=0;
-                    isRunning=false;
-                    ((Timer) e.getSource()).stop();
-                }
+        final Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        resizeTimer = new Timer(20, e -> {
+            if (timer < 1) {
+                timer += 0.02;
+                width = (int) Math.ceil(screenSize.width + ((300 - screenSize.width) * easeOutExpo(timer)));
+                height = (int) Math.ceil(screenSize.height + ((120 - screenSize.height) * easeOutExpo(timer)));
+                y = (screenSize.height - frame.getHeight()) / 2 + (int) ((50 - (double) (screenSize.height - frame.getHeight()) / 2) * easeOutExpo(timer));
+                frame.setLocation((screenSize.width - frame.getWidth()) / 2, y);
+                frame.setPreferredSize(new Dimension(width, height));
+                frame.pack();
+                frame.setShape(new RoundRectangle2D.Double(0, 0, width, height, 30 * easeOutExpo(timer), 30 * easeOutExpo(timer)));
+                timeLabel.setFont(minecraftFont.deriveFont(Font.PLAIN, (float) (260 + ((48 - 260) * easeOutExpo(timer)))));
+            } else {
+                timer=0;
+                isRunning=false;
+                frame.setShape(new RoundRectangle2D.Double(0, 0, width, height, 30, 30));
+                ((Timer) e.getSource()).stop();
             }
         });
         resizeTimer.setRepeats(true);
@@ -602,3 +643,41 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
     }
 
 }
+class ColorCirclePanel extends JPanel {
+    private Color selectedColor = new Color(FloatingClockTray.R, FloatingClockTray.G, FloatingClockTray.B);
+
+    public ColorCirclePanel() {
+        setPreferredSize(new Dimension(150, 150));
+        addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                selectedColor = getColorAtPoint(e.getX(), e.getY());
+                FloatingClockTray.R = selectedColor.getRed();
+                FloatingClockTray.G = selectedColor.getGreen();
+                FloatingClockTray.B = selectedColor.getBlue();
+                repaint(); // 重新绘制
+            }
+        });
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        Graphics2D g2d = (Graphics2D) g;
+
+        int diameter = Math.min(getWidth(), getHeight()) - 10;
+        for (int i = 0; i < 360; i++) {
+            g2d.setColor(Color.getHSBColor(i/360f, 1.0f, 1.0f));
+            g2d.fillArc(5, 5, diameter, diameter, i, 1);
+        }
+
+        g2d.setColor(selectedColor);
+        g2d.fillOval(getWidth() / 2 - 10, getHeight() / 2 - 10, 20, 20);
+    }
+
+    private Color getColorAtPoint(int x, int y) {
+        float hue = (float) Math.atan2(y - (double) getHeight() / 2, x - (double) getWidth() / 2) / (2 * (float) Math.PI) + 0.5f;
+        return Color.getHSBColor(hue, 1.0f, 1.0f);
+    }
+}
+
