@@ -1,0 +1,31 @@
+{
+  "NORMAL": {
+    "morning_read": "0645-0730",
+    "breakfast": "0730-0800",
+    "FRC": "0800-0830",
+    "run": "1010-1040",
+    "lunch": "1210-1240",
+    "noon_study": "1240-1320",
+    "noon_sleep": "1320-1400",
+    "noon_read": "1400-1430",
+    "dinner": "1740-1825",
+    "evening_read": "1825-1900",
+    "evening_test": "1900-1940",
+    "evening_study": "1950-2120",
+    "evening_self_study": "2130-2200"
+  },
+  "SPECIAL": {
+    "dinner": "1740-1805",
+    "evening_read": "1805-1900"
+  },
+  "MONDAY": {
+    "biology": "0840-0920",
+    "math": "0930-1010",
+    "chemistry": "1040-1120",
+    "physics": "1130-1210",
+    "english": "1430-1510",
+    "chinese": "1520-1600",
+    "chinese_test": "1610-1650",
+    "chemistry_test": "1700-1740"
+  }
+}

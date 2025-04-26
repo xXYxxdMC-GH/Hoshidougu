@@ -4,7 +4,7 @@
     <root id="archive" name="Time.jar">
       <element id="module-output" name="Time" />
       <element id="extracted-dir" path="$PROJECT_DIR$/../../Downloads/jnativehook-2.2.2.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/../../Downloads/org.json-1.6-20240205.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lib/gson-2.13.0.jar" path-in-jar="/" />
     </root>
   </artifact>
 </component>
