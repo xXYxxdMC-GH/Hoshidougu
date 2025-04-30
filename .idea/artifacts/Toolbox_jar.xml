@@ -1,0 +1,10 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="Toolbox:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/Toolbox_jar</output-path>
+    <root id="archive" name="Toolbox.jar">
+      <element id="module-output" name="Toolbox" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lib/jnativehook-2.2.2.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lib/gson-2.13.0.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>

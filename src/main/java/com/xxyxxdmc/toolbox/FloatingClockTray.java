@@ -1,4 +1,4 @@
-package main.java.com.xxyxxdmc.time;
+package main.java.com.xxyxxdmc.toolbox;
 
 import com.github.kwhat.jnativehook.GlobalScreen;
 import com.github.kwhat.jnativehook.keyboard.NativeKeyEvent;
@@ -44,8 +44,8 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
     private static Font minecraftFont;
     private static final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
     private static final String systemType = System.getProperty("os.name");
-    private static final String systemVersion = System.getProperty("os.version");
-    private static final String systemArch = System.getProperty("os.arch");
+    //private static final String systemVersion = System.getProperty("os.version");
+    //private static final String systemArch = System.getProperty("os.arch");
     private static String sleepType;
 
     public FloatingClockTray() {
@@ -59,8 +59,8 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
     }
 
     public static void main(String[] args) throws Exception {
-        LocalDate today = LocalDate.now(ZoneId.systemDefault());
-        DayOfWeek dayOfWeek = today.getDayOfWeek();
+        //LocalDate today = LocalDate.now(ZoneId.systemDefault());
+        //DayOfWeek dayOfWeek = today.getDayOfWeek();
         if (!SystemTray.isSupported()) {
             throw new Exception();
         }
