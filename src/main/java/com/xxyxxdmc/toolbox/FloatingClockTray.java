@@ -72,16 +72,13 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
         GlobalScreen.addNativeMouseMotionListener(new FloatingClockTray());
         GlobalScreen.addNativeMouseWheelListener(new FloatingClockTray());
 
-        String jarDir = System.getProperty("user.dir");
-        String jsonPath = jarDir + "/data.json";
+        JsonObject dataObject = DataJsonReader.getDataObject();
+        JsonObject languageObject = DataJsonReader.getLanguageObject();
+        JsonObject timeTableObject = DataJsonReader.getTimeTableObject();
+        String jsonPath = DataJsonReader.getJsonPath();
+        Gson dataGson = DataJsonReader.getDataGson();
         File jsonFile = new File(jsonPath);
-        if (!jsonFile.exists()) {
-            createDefaultJSON(Paths.get(jsonPath));
-        }
-        Gson dataGson = new Gson();
-        FileReader fileReader = new FileReader(jsonPath);
-        JsonObject dataObject = dataGson.fromJson(fileReader, JsonObject.class);
-        fileReader.close();
+
         String language = dataObject.get("language").getAsString();
         String color = dataObject.get("color").getAsString();
         int waitTime = dataObject.get("wait_time").getAsInt();
@@ -93,17 +90,6 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
         R=Color.decode(color).getRed();
         G=Color.decode(color).getGreen();
         B=Color.decode(color).getBlue();
-
-        InputStream languageStream = classLoader.getResourceAsStream(String.format("lang/%s.json", language));
-        assert languageStream != null;
-        String languageText = new Scanner(languageStream, StandardCharsets.UTF_8).useDelimiter("\\A").next();
-        InputStream timeTableStream = classLoader.getResourceAsStream("schedule/time_table.json");
-        assert timeTableStream != null;
-        String timeTableText = new Scanner(timeTableStream, StandardCharsets.UTF_8).useDelimiter("\\A").next();
-        Gson timeTableGson = new Gson();
-        JsonObject timeTableObject = timeTableGson.fromJson(timeTableText, JsonObject.class);
-        Gson languageGson = new Gson();
-        JsonObject languageObject = languageGson.fromJson(languageText, JsonObject.class);
 
         tray = SystemTray.getSystemTray();
         Image image = Toolkit.getDefaultToolkit().getImage(classLoader.getResource("xxyxxdmc.png"));
@@ -428,9 +414,8 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
             sleepType=null;
             isRunning=false;
             mainTimer.start();
-            popupMenu.add(sleepMenu);
-            popupMenu.add(lowSleepMenu);
-            tray.getTrayIcons()[0].setPopupMenu(popupMenu);
+            sleepMenu.setEnabled(true);
+            lowSleepMenu.setEnabled(true);
         }, minutes, TimeUnit.MINUTES);
     }
 
@@ -584,13 +569,6 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
         });
         resizeTimer.setRepeats(true);
         resizeTimer.start();
-    }
-    static void createDefaultJSON(Path path) {
-        String defaultJSON = "{\"language\":\"zh_cn\",\"color\":\"#FF6D23\",\"full_screen_wait_time\":\"300\",\"wait_time\":\"60\",\"text_size\":\"260\"}";
-        try {
-            Files.write(path, defaultJSON.getBytes());
-        } catch (IOException ignored) {
-        }
     }
 
     public static boolean showConfirmDialogWithTimeout(Object params, String title, int timeout_ms) {
