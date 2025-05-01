@@ -1,15 +1,12 @@
 package main.java.com.xxyxxdmc.toolbox;
 
-import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.geom.RoundRectangle2D;
-import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 
@@ -23,6 +20,9 @@ public class MainToolBox {
     private static final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
     private final static JLabel[] labelList = {clockButton, cardDrawButton, wheelButton, musicPlayerButton};
     private final static java.util.List<int[]> locationList = new ArrayList<>();
+    private final static String[] iconList = {"clock", "card", "wheel", "player"};
+    public static boolean[] runningClass = {false, false, false, false};
+
     private static boolean isPlaying = false;
     private static final SystemTray mainTray;
     private static final PopupMenu trayMenu = new PopupMenu();
@@ -34,20 +34,51 @@ public class MainToolBox {
         locationList.add(new int[]{205, 205});
         for (int i=0;i<labelList.length;i++) {
             JLabel label = labelList[i];
-            Container container = toolboxFrame.getContentPane();
-            URL url = classLoader.getResource("wheel.png");
+            URL url = classLoader.getResource(String.format("icons/%s.png", iconList[i]));
+            assert url != null;
             ImageIcon icon = new ImageIcon(url);
             label.setOpaque(true);
             label.setForeground(Color.WHITE);
             label.setBackground(Color.BLACK);
             label.setBounds(locationList.get(i)[0], locationList.get(i)[1], 180, 180);
             label.setBorder(BorderFactory.createLineBorder(new Color(10,10,10), 7, true));
-            Image image = icon.getImage().getScaledInstance(100, 100, Image.SCALE_DEFAULT); // 这里设置缩放尺寸
+            Image image = icon.getImage().getScaledInstance(120, 120, Image.SCALE_SMOOTH);
             ImageIcon scaledIcon = new ImageIcon(image);
             label.setIcon(scaledIcon);
+            int finalI = i;
+            label.addMouseListener(new MouseListener() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    switch (iconList[finalI]) {
+                        case "clock" -> {
+                            if (!runningClass[0]) {
+                                runningClass[0]=true;
+                                FloatingClockTray.main(null);
+                            } else {
+                                runningClass[0]=false;
+                            }
+                        }
+                        default -> {}
+                    }
+                }
+
+                @Override
+                public void mouseEntered(MouseEvent e) {
+
+                }
+
+                @Override
+                public void mouseExited(MouseEvent e) {
+
+                }
+                @Override
+                public void mousePressed(MouseEvent e) {}
+                @Override
+                public void mouseReleased(MouseEvent e) {}
+            });
         }
         mainTray = SystemTray.getSystemTray();
-        Image image = Toolkit.getDefaultToolkit().getImage(classLoader.getResource("xxyxxdmc.png"));
+        Image image = Toolkit.getDefaultToolkit().getImage(classLoader.getResource("icons/xxyxxdmc.png"));
         TrayIcon trayIcon = new TrayIcon(image, DataJsonReader.getLanguageObject().get("toolbox").getAsString());
         trayIcon.setImageAutoSize(true);
         try {mainTray.add(trayIcon);} catch (AWTException ignored) {}

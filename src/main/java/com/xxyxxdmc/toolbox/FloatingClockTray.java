@@ -14,14 +14,9 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.RoundRectangle2D;
 import java.io.*;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.Objects;
-import java.util.Scanner;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -58,12 +53,9 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
         } catch (FontFormatException | IOException ignored) {}
     }
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         //LocalDate today = LocalDate.now(ZoneId.systemDefault());
         //DayOfWeek dayOfWeek = today.getDayOfWeek();
-        if (!SystemTray.isSupported()) {
-            throw new Exception();
-        }
         try {
             GlobalScreen.registerNativeHook();
         } catch (Exception ignored) {}
@@ -92,11 +84,11 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
         B=Color.decode(color).getBlue();
 
         tray = SystemTray.getSystemTray();
-        Image image = Toolkit.getDefaultToolkit().getImage(classLoader.getResource("xxyxxdmc.png"));
+        Image image = Toolkit.getDefaultToolkit().getImage(classLoader.getResource("icons/xxyxxdmc.png"));
 
         TrayIcon trayIcon = new TrayIcon(image, languageObject.get("clock").getAsString());
         trayIcon.setImageAutoSize(true);
-        tray.add(trayIcon);
+        try {tray.add(trayIcon);} catch (AWTException ignored) {}
 
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         frame.setUndecorated(true);
@@ -118,6 +110,9 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
 
         Timer timer = new Timer(1000, e -> {
             updateTime();
+            if (!MainToolBox.runningClass[0]) {
+
+            }
         });
         timer.start();
 
@@ -327,6 +322,10 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
             sleepMenu.setEnabled(false);
             lowSleepMenu.setEnabled(false);
         } else mainTimer.start();
+    }
+
+    public static void finish() {
+        System.exit(0);
     }
 
     private static JSlider createSlider(int min, int max, int value) {
