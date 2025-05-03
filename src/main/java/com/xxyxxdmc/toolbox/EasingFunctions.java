@@ -55,6 +55,10 @@ public class EasingFunctions {
         if (time == 1) return 1;
         return (time < 0.5) ? 0.5 * Math.pow(2, 20 * time - 10) : 1 - 0.5 * Math.pow(2, -20 * time + 10);
     }
+
+    public static double easeX2(double time) {
+        return -Math.pow(time-1, 2)+1;
+    }
 }
 
 

@@ -55,14 +55,6 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
     public static void main(String[] args) {
         //LocalDate today = LocalDate.now(ZoneId.systemDefault());
         //DayOfWeek dayOfWeek = today.getDayOfWeek();
-        try {
-            GlobalScreen.registerNativeHook();
-        } catch (Exception ignored) {}
-        GlobalScreen.addNativeKeyListener(new FloatingClockTray());
-        GlobalScreen.addNativeMouseListener(new FloatingClockTray());
-        GlobalScreen.addNativeMouseMotionListener(new FloatingClockTray());
-        GlobalScreen.addNativeMouseWheelListener(new FloatingClockTray());
-
         JsonObject dataObject = DataJsonReader.getDataObject();
         JsonObject languageObject = DataJsonReader.getLanguageObject();
         String color = dataObject.get("color").getAsString();
@@ -114,7 +106,6 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
                 mainTime=0;
                 return;
             }
-            System.out.println(isClockHidden);
             mainTime++;
             if (mainTime == waitTimeAll && isClockHidden) {
                 showTheFrame();
@@ -170,9 +161,7 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
 
     @Override
     public void nativeMouseMoved(NativeMouseEvent event) {
-        System.out.println("move");
         if (mainTimer ==null) return;
-        System.out.println("what");
         mainTime=0;
         hideTheFrame();
     }

@@ -40,6 +40,13 @@ public class MainToolBox {
     private static final PopupMenu trayMenu = new PopupMenu();
     private static boolean isHidden = false;
     public static Menu sleepMenu , lowSleepMenu;
+    static {
+        try {GlobalScreen.registerNativeHook();} catch (NativeHookException e) {throw new RuntimeException(e);}
+        GlobalScreen.addNativeMouseListener(new FloatingClockTray());
+        GlobalScreen.addNativeMouseMotionListener(new FloatingClockTray());
+        GlobalScreen.addNativeMouseWheelListener(new FloatingClockTray());
+        GlobalScreen.addNativeKeyListener(new FloatingClockTray());
+    }
     // 主要是关于Label和UI的静态更新
     static {
         locationList.add(new int[]{15, 15});
@@ -67,6 +74,7 @@ public class MainToolBox {
                         case "clock" -> {
                             if (!runningClass[0]) {
                                 runningClass[0]=true;
+                                new FloatingClockTray();
                                 FloatingClockTray.main(null);
                                 trayMenu.add(clockMenu);
                             } else {
@@ -75,9 +83,6 @@ public class MainToolBox {
                                 clockFrame.dispose();
                                 clockFrame.removeAll();
                                 isClockHidden=true;
-                                try {
-                                    GlobalScreen.unregisterNativeHook();
-                                } catch (NativeHookException ignored) {}
                                 System.gc();
                             }
                         }
