@@ -2,14 +2,16 @@
 <project version="4">
   <component name="Encoding">
     <file url="file://$PROJECT_DIR$/src/main/java/com/xxyxxdmc/toolbox/AdvancedRoulette.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java/com/xxyxxdmc/toolbox/EasingFunctions.java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/src/main/java/com/xxyxxdmc/toolbox/FloatingClockTray.java" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/src/main/java/com/xxyxxdmc/toolbox/NamePanel.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java/com/xxyxxdmc/toolbox/MainToolBox.java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/src/main/java/com/xxyxxdmc/toolbox/NamePanel.java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/src/main/java/com/xxyxxdmc/toolbox/RouletteGame.java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/src/main/java/com/xxyxxdmc/toolbox/Test.java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/src/main/resources/lang/en_us.json" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/src/main/resources/lang/ja_jp.json" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/src/main/resources/lang/zh_cn.json" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/resources/schedule/exam.json" charset="UTF-8" />
     <file url="PROJECT" charset="GBK" />
   </component>
 </project>

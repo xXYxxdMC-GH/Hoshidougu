@@ -1,7 +1,5 @@
 package main.java.com.xxyxxdmc.toolbox;
 
-import org.jetbrains.annotations.Nullable;
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseEvent;
@@ -18,7 +16,7 @@ public class NamePanel extends JLabel {
     private static Font minecraftFont;
     private final String text;
     private Color color = Color.BLACK;
-    public static final JFrame frame = new JFrame("");
+    public static final JFrame wheelFrame = new JFrame("");
     private static java.util.List<NamePanel> namePanels = new ArrayList<>();
 
     static {
@@ -37,12 +35,12 @@ public class NamePanel extends JLabel {
         repaint();
     }
 
-    public NamePanel(String name, @Nullable Color nowColor, double nowAngle) {
+    public NamePanel(String name, Color nowColor, double nowAngle) {
         this.text = name;
         if (nowColor != null) this.color=nowColor;
         this.angle = nowAngle;
         setOpaque(false);
-        setBounds(0, 0, frame.getWidth(), frame.getHeight());
+        setBounds(0, 0, wheelFrame.getWidth(), wheelFrame.getHeight());
     }
 
     @Override
@@ -52,7 +50,7 @@ public class NamePanel extends JLabel {
 
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-        int x = frame.getWidth() / 2 + 20, y = frame.getHeight() / 2 - 30, width = 330, height = 45;
+        int x = wheelFrame.getWidth() / 2 + 20, y = wheelFrame.getHeight() / 2 - 30, width = wheelFrame.getWidth() / 8 * 3, height = 45;
         AffineTransform transform = new AffineTransform();
         transform.rotate(Math.toRadians(angle), x - 30, y+ (double) height /2);
         g2d.setTransform(transform);
@@ -74,35 +72,35 @@ public class NamePanel extends JLabel {
 
     public static void main(String[] args) {
         System.setProperty("prism.forceGPU", "true");
-        frame.setSize(800,800);
-        frame.setUndecorated(true);
-        frame.setShape(new RoundRectangle2D.Float(0, 0, 800, 800, 30, 30));
-        frame.setAlwaysOnTop(true);
-        frame.getContentPane().setBackground(Color.BLACK);
-        frame.setLocationRelativeTo(null);
-        frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        frame.setVisible(true);
-        frame.setLayout(null);
-        frame.setResizable(false);
+        wheelFrame.setSize(800,800);
+        wheelFrame.setUndecorated(true);
+        wheelFrame.setShape(new RoundRectangle2D.Float(0, 0, 800, 800, 30, 30));
+        wheelFrame.setAlwaysOnTop(true);
+        wheelFrame.getContentPane().setBackground(Color.BLACK);
+        wheelFrame.setLocationRelativeTo(null);
+        wheelFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        wheelFrame.setVisible(true);
+        wheelFrame.setLayout(null);
+        wheelFrame.setResizable(false);
         Arrow arrow = new Arrow();
-        frame.add(arrow);
+        wheelFrame.add(arrow);
         arrow.setVisible(true);
-        arrow.setBounds(0, 0, frame.getWidth(), frame.getHeight());
+        arrow.setBounds(0, 0, wheelFrame.getWidth(), wheelFrame.getHeight());
         ContainerPanel containerPanel = new ContainerPanel();
-        frame.add(containerPanel);
-        frame.revalidate();
-        frame.repaint();
+        wheelFrame.add(containerPanel);
+        wheelFrame.revalidate();
+        wheelFrame.repaint();
         for (int i=0;i<46;i++) {
             NamePanel namePanel = new NamePanel(String.valueOf(i), null, 0);
             namePanels.add(namePanel);
             containerPanel.addNamePanel(namePanel);
-            frame.revalidate();
-            frame.repaint();
+            wheelFrame.revalidate();
+            wheelFrame.repaint();
         }
         for (int i=0;i<namePanels.size();i++) {
             NamePanel namePanel = namePanels.get(i);
             namePanel.setVisible(true);
-            namePanel.setBounds(0, 0, frame.getWidth(), frame.getHeight());
+            namePanel.setBounds(0, 0, wheelFrame.getWidth(), wheelFrame.getHeight());
             final double[] time = {0};
             double anglePerPanel = 360.0 / 46;
             double targetAngle = i * anglePerPanel;
@@ -110,16 +108,16 @@ public class NamePanel extends JLabel {
                 if (time[0] <1){
                     namePanel.rotate(targetAngle * EasingFunctions.easeInOutExpo(time[0]));
                     time[0] +=0.08;
-                    frame.revalidate();
-                    frame.repaint();
+                    wheelFrame.revalidate();
+                    wheelFrame.repaint();
                 } else {
-                    frame.revalidate();
-                    frame.repaint();
+                    wheelFrame.revalidate();
+                    wheelFrame.repaint();
                     ((Timer)e.getSource()).stop();
                 }
             }).start();
         }
-        frame.addMouseListener(new MouseListener() {
+        wheelFrame.addMouseListener(new MouseListener() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 double angle = 360 * Math.random();
@@ -129,11 +127,11 @@ public class NamePanel extends JLabel {
                     if (time[0] <1){
                         containerPanel.rotate(targetAngle * EasingFunctions.easeInOutExpo(time[0]));
                         time[0] +=0.08;
-                        frame.revalidate();
-                        frame.repaint();
+                        wheelFrame.revalidate();
+                        wheelFrame.repaint();
                     } else {
-                        frame.revalidate();
-                        frame.repaint();
+                        wheelFrame.revalidate();
+                        wheelFrame.repaint();
                         ((Timer)e1.getSource()).stop();
                     }
                 }).start();

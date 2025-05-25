@@ -1,5 +1,6 @@
 package main.java.com.xxyxxdmc.toolbox;
 
+// TODO : Replace JNativeHook, use JNI to catch mouse and keyboard event.
 public class HookManager {
     static {
         String os = System.getProperty("os.name").toLowerCase();

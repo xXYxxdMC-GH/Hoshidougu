@@ -19,6 +19,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import static main.java.com.xxyxxdmc.toolbox.FloatingClockTray.*;
+import static main.java.com.xxyxxdmc.toolbox.NamePanel.wheelFrame;
 import static main.java.com.xxyxxdmc.toolbox.SomeFunctions.createRow;
 import static main.java.com.xxyxxdmc.toolbox.SomeFunctions.createSlider;
 
@@ -47,7 +48,7 @@ public class MainToolBox {
         GlobalScreen.addNativeMouseWheelListener(new FloatingClockTray());
         GlobalScreen.addNativeKeyListener(new FloatingClockTray());
     }
-    // Ö÷ÒªÊÇ¹ØÓÚLabelºÍUIµÄ¾²Ì¬¸üÐÂ
+    // ä¸»è¦æ˜¯å…³äºŽLabelå’ŒUIçš„é™æ€æ›´æ–°
     static {
         locationList.add(new int[]{15, 15});
         locationList.add(new int[]{205, 15});
@@ -70,6 +71,7 @@ public class MainToolBox {
             label.addMouseListener(new MouseListener() {
                 @Override
                 public void mouseClicked(MouseEvent e) {
+                    hideFrame(false);
                     switch (iconList[finalI]) {
                         case "clock" -> {
                             if (!runningClass[0]) {
@@ -83,7 +85,16 @@ public class MainToolBox {
                                 clockFrame.dispose();
                                 clockFrame.removeAll();
                                 isClockHidden=true;
-                                System.gc();
+                            }
+                        }
+                        case "wheel" -> {
+                            if (!runningClass[1]) {
+                                runningClass[1]=true;
+                                NamePanel.main(null);
+                            } else {
+                                runningClass[1]=false;
+                                wheelFrame.dispose();
+                                wheelFrame.removeAll();
                             }
                         }
                         default -> {}
@@ -143,7 +154,7 @@ public class MainToolBox {
             }
         });
     }
-    //Ö÷ÒªÊÇ¹ØÓÚÐ¡¹¤¾ß²Ëµ¥µÄ³õÊ¼»¯
+    //ä¸»è¦æ˜¯å…³äºŽå°å·¥å…·èœå•çš„åˆå§‹åŒ–
     static {
         JsonObject languageObject = DataJsonReader.getLanguageObject();
         JsonObject dataObject = DataJsonReader.getDataObject();
@@ -154,7 +165,7 @@ public class MainToolBox {
         settingItem.addActionListener(e -> {
             JFrame settingFrame = new JFrame(languageObject.get("setting").getAsString());
             settingFrame.setSize(350, 200);
-            settingFrame.setLocationRelativeTo(null); // ¾ÓÖÐÏÔÊ¾
+            settingFrame.setLocationRelativeTo(null); // å±…ä¸­æ˜¾ç¤º
             settingFrame.setResizable(false);
             settingFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
@@ -196,8 +207,6 @@ public class MainToolBox {
             mainPanel.add(createRow(fullWaitLabel, fullWaitSlider, fullWaitValueLabel));
             mainPanel.add(createRow(colorLabel, colorButton, colorPanel));
             mainPanel.add(createRow(textSizeLabel, textSizeSlider, textSizeValueLabel));
-            CPUControlRow cpuControl = new CPUControlRow();
-            mainPanel.add(cpuControl);
 
             settingFrame.addWindowListener(new WindowAdapter() {
                 @Override
@@ -228,13 +237,14 @@ public class MainToolBox {
         countdownItem.addActionListener(e -> {
             countdown=!countdown;
             if (!countdown) countdownItem.setLabel(languageObject.get("countdown").getAsString());
-            else countdownItem.setLabel(languageObject.get("countdown").getAsString()+" ¡Ì");
+            else countdownItem.setLabel(languageObject.get("countdown").getAsString()+" âˆš");
         });
         clockMenu.add(countdownItem);
         MenuItem fullScreenItem = new MenuItem(languageObject.get("full_screen").getAsString());
         fullScreenItem.addActionListener(e -> {
             ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
             if (isClockHidden) showTheFrame();
+            isPlaying=true;
             scheduledExecutorService.schedule(() -> {
                 isClockRunning =false;
                 isFullScreen=true;
@@ -245,41 +255,41 @@ public class MainToolBox {
         clockMenu.add(fullScreenItem);
         String language = dataObject.get("language").getAsString();
         Menu languageMenu = new Menu(languageObject.get("language").getAsString());
-        MenuItem englishTL = new MenuItem("English"+(language.equals("en_us")?" ¡Ì":""));
-        MenuItem chineseTL = new MenuItem("ÖÐÎÄ"+(language.equals("zh_cn")?" ¡Ì":""));
-        MenuItem japaneseTL = new MenuItem("ÈÕ±¾ÕZ"+(language.equals("ja_jp")?" ¡Ì":""));
+        MenuItem englishTL = new MenuItem("English"+(language.equals("en_us")?" âˆš":""));
+        MenuItem chineseTL = new MenuItem("ä¸­æ–‡"+(language.equals("zh_cn")?" âˆš":""));
+        MenuItem japaneseTL = new MenuItem("æ—¥æœ¬èªž"+(language.equals("ja_jp")?" âˆš":""));
         languageMenu.add(englishTL);
         languageMenu.add(chineseTL);
         languageMenu.add(japaneseTL);
         englishTL.addActionListener(e -> {
-            if (englishTL.getLabel().contains("¡Ì")) return;
+            if (englishTL.getLabel().contains("âˆš")) return;
             dataObject.addProperty("language", "en_us");
             try (FileWriter writer = new FileWriter(jsonFile)) {
                 dataGson.toJson(dataObject, writer);
             } catch (Exception ignored) {}
-            englishTL.setLabel("English ¡Ì");
-            chineseTL.setLabel("ÖÐÎÄ");
-            japaneseTL.setLabel("ÈÕ±¾ÕZ");
+            englishTL.setLabel("English âˆš");
+            chineseTL.setLabel("ä¸­æ–‡");
+            japaneseTL.setLabel("æ—¥æœ¬èªž");
             JOptionPane.showMessageDialog(null, languageObject.get("restart_info").getAsString());
         });chineseTL.addActionListener(e -> {
-            if (chineseTL.getLabel().contains("¡Ì")) return;
+            if (chineseTL.getLabel().contains("âˆš")) return;
             dataObject.addProperty("language", "zh_cn");
             try (FileWriter writer = new FileWriter(jsonFile)) {
                 dataGson.toJson(dataObject, writer);
             } catch (Exception ignored) {}
             englishTL.setLabel("English");
-            chineseTL.setLabel("ÖÐÎÄ ¡Ì");
-            japaneseTL.setLabel("ÈÕ±¾ÕZ");
+            chineseTL.setLabel("ä¸­æ–‡ âˆš");
+            japaneseTL.setLabel("æ—¥æœ¬èªž");
             JOptionPane.showMessageDialog(null, languageObject.get("restart_info").getAsString());
         });japaneseTL.addActionListener(e -> {
-            if (japaneseTL.getLabel().contains("¡Ì")) return;
+            if (japaneseTL.getLabel().contains("âˆš")) return;
             dataObject.addProperty("language", "ja_jp");
             try (FileWriter writer = new FileWriter(jsonFile)) {
                 dataGson.toJson(dataObject, writer);
             } catch (Exception ignored) {}
             englishTL.setLabel("English");
-            chineseTL.setLabel("ÖÐÎÄ");
-            japaneseTL.setLabel("ÈÕ±¾ÕZ ¡Ì");
+            chineseTL.setLabel("ä¸­æ–‡");
+            japaneseTL.setLabel("æ—¥æœ¬èªž âˆš");
             JOptionPane.showMessageDialog(null, languageObject.get("restart_info").getAsString());
         });
         sleepMenu = new Menu(languageObject.get("sleep").getAsString());

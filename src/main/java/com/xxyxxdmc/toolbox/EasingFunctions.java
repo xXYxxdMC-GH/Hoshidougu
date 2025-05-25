@@ -1,5 +1,6 @@
 package main.java.com.xxyxxdmc.toolbox;
 
+// There have many easing functions, some will be deleted when the project is 
 public class EasingFunctions {
 
     public static double easeLinear(double time) {

@@ -1,13 +1,11 @@
 package main.java.com.xxyxxdmc.toolbox;
 
-import com.github.kwhat.jnativehook.GlobalScreen;
 import com.github.kwhat.jnativehook.keyboard.NativeKeyEvent;
 import com.github.kwhat.jnativehook.keyboard.NativeKeyListener;
 import com.github.kwhat.jnativehook.mouse.*;
 import com.google.gson.JsonObject;
 
 import javax.swing.*;
-import javax.swing.event.ChangeEvent;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.RoundRectangle2D;
@@ -37,9 +35,6 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
     private static SystemTray tray;
     private static Font minecraftFont;
     private static final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-    private static final String systemType = System.getProperty("os.name");
-    //private static final String systemVersion = System.getProperty("os.version");
-    //private static final String systemArch = System.getProperty("os.arch");
     private static String sleepType;
 
     public FloatingClockTray() {
@@ -129,7 +124,7 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
         String time;
         LocalTime now = LocalTime.now();
         if (countdown) {
-            LocalTime targetTime = LocalTime.of(17, 40, 0); // 倒计时目标时间
+            LocalTime targetTime = LocalTime.of(17, 40, 0);
             if (now.isBefore(targetTime)) {
                 Duration duration = Duration.between(now, targetTime);
                 long hours = duration.toHours();
@@ -372,16 +367,6 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
         return (selectedValue != null && selectedValue.equals(JOptionPane.CANCEL_OPTION));
     }
 
-    public static String detectOS() {
-        String os = systemType.toLowerCase();
-        if (os.contains("win")) {
-            return "Windows";
-        } else if ((os.contains("mac"))) {
-            return "MacOS";
-        } else if (os.contains("nix") || os.contains("nux") || os.contains("aix")) {
-            return "Linux";
-        } else return "Unsupported OS";
-    }
 }
 class ColorCirclePanel extends JPanel {
     private Color selectedColor = new Color(FloatingClockTray.R, FloatingClockTray.G, FloatingClockTray.B);
@@ -420,58 +405,3 @@ class ColorCirclePanel extends JPanel {
         return Color.getHSBColor(hue, 1.0f, 1.0f);
     }
 }
-
-class CPUControlRow extends JPanel {
-    private JToggleButton powerToggle;
-    private JSlider frequencySlider;
-
-    public CPUControlRow() {
-        setLayout(new FlowLayout());
-
-        // **创建小尺寸的开关按钮**
-        powerToggle = new JToggleButton("CPU 限制: 关闭");
-        powerToggle.setPreferredSize(new Dimension(40, 25)); // **调整按钮大小**
-        powerToggle.addActionListener(e -> {
-            if (powerToggle.isSelected()) {
-                powerToggle.setText("CPU 限制: 开启");
-                adjustCPUFrequency(frequencySlider.getValue());
-            } else {
-                powerToggle.setText("CPU 限制: 关闭");
-                resetCPUFrequency();
-            }
-        });
-
-        // **创建滑动条 (50% - 100%)**
-        frequencySlider = new JSlider(JSlider.HORIZONTAL, 30, 100, 85);
-        frequencySlider.setMajorTickSpacing(10);
-        frequencySlider.setPaintLabels(true);
-        frequencySlider.setPreferredSize(new Dimension(150, 30)); // **设置滑动条大小**
-        frequencySlider.addChangeListener((ChangeEvent e) -> {
-            if (powerToggle.isSelected()) {
-                adjustCPUFrequency(frequencySlider.getValue());
-            }
-        });
-
-        // **添加组件到面板**
-        add(powerToggle);
-        add(new JLabel("CPU 限制 (%)："));
-        add(frequencySlider);
-    }
-
-    // **调整 CPU 频率**
-    private void adjustCPUFrequency(int value) {
-        try {
-            new ProcessBuilder("powercfg", "/SETACVALUEINDEX", "SCHEME_BALANCED", "SUB_PROCESSOR", "MAXPROCSTATE", String.valueOf(value)).start();
-            System.out.println("CPU 频率调整为: " + value + "%");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    // **恢复 CPU 频率**
-    private void resetCPUFrequency() {
-        adjustCPUFrequency(100);
-    }
-
-}
-
