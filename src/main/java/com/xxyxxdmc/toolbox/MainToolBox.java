@@ -244,11 +244,11 @@ public class MainToolBox {
         fullScreenItem.addActionListener(e -> {
             ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
             if (isClockHidden) showTheFrame();
-            isPlaying=true;
+            isClockRunning=true;
             scheduledExecutorService.schedule(() -> {
-                isClockRunning =false;
                 isFullScreen=true;
                 mainTime =0;
+                isClockRunning =false;
                 enterFullScreen();
             },2, TimeUnit.SECONDS);
         });

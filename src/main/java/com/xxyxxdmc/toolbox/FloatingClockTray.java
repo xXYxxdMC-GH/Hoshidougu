@@ -22,7 +22,7 @@ import static main.java.com.xxyxxdmc.toolbox.MainToolBox.sleepMenu;
 
 public class FloatingClockTray implements NativeKeyListener, NativeMouseListener, NativeMouseInputListener, NativeMouseWheelListener {
     static JFrame clockFrame;
-    static JLabel timeLabel;
+    static JLabel timeLabel, additionalLabel;
     static boolean isClockHidden = false, isClockRunning = false, countdown = false, isFullScreen = false;
     private static int y = 50;
     static double timer = 0, fadeTime = 0;
@@ -36,6 +36,8 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
     private static Font minecraftFont;
     private static final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
     private static String sleepType;
+    private static boolean examMode;
+    private static final Component glue = Box.createVerticalGlue();
 
     public FloatingClockTray() {
     }
@@ -79,6 +81,25 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
         clockFrame.add(timeLabel);
         clockFrame.getContentPane().setBackground(Color.BLACK);
         timeLabel.setForeground(new Color(R, G, B));
+        timeLabel.setOpaque(false);
+        timeLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        additionalLabel = new JLabel("123456", SwingConstants.CENTER); // 设置文本和对齐
+        additionalLabel.setFont(minecraftFont.deriveFont(Font.PLAIN, 20)); // 设置字体和大小
+        additionalLabel.setForeground(Color.LIGHT_GRAY); // 设置颜色
+        additionalLabel.setOpaque(false); // 背景透明
+        additionalLabel.setAlignmentX(Component.CENTER_ALIGNMENT); // 水平居中对齐
+
+        JPanel contentPanel = new JPanel();
+        contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
+        contentPanel.setBackground(Color.BLACK); // 设置 JPanel 的背景色
+        contentPanel.setOpaque(true); // 确保背景色可见
+
+        contentPanel.add(Box.createVerticalGlue());
+        contentPanel.add(timeLabel);
+        contentPanel.add(Box.createRigidArea(new Dimension(0, 5)));
+
+        clockFrame.setContentPane(contentPanel);
 
         clockFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
 
@@ -288,6 +309,8 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
         if (isClockRunning) return;
         isClockRunning =true;
         mainTimer.stop();
+        clockFrame.add(additionalLabel);
+        clockFrame.add(glue);
         final Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         resizeTimer = new Timer(20, e -> {
             if (timer < 1) {
@@ -318,6 +341,8 @@ public class FloatingClockTray implements NativeKeyListener, NativeMouseListener
     private static void exitFullScreen(){
         if (isClockRunning) return;
         isClockRunning =true;
+        clockFrame.remove(additionalLabel);
+        clockFrame.remove(glue);
         clockFrame.setExtendedState(JFrame.NORMAL);
         final Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         resizeTimer = new Timer(20, e -> {
